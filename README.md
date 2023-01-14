@@ -107,11 +107,11 @@ Change the target calendar respectively.
 
 ```js
 function onCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 0, 21, (targetEvent, sourceEvent) => {     
+  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {     
     ...
     return targetEvent
   })
-  runOneWaySync('Work', 'Personal', 0, 21, (targetEvent, sourceEvent) => {     
+  runOneWaySync('Work', 'Personal', 7, 21, (targetEvent, sourceEvent) => {     
     ...
     return targetEvent
   })
