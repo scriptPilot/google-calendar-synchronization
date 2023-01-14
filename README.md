@@ -20,9 +20,11 @@ At the first run, all events after the start date are synchronized. With any oth
 
 ### Trigger
 
-Create a trigger for the `onCalendarUpdate` function, triggered by calendar updates.
+Create two triggers for the `onCalendarUpdate` function, triggered by calendar updates:
+- one for the source calencar ID
+- one for the target calendar ID
 
-Now, on every calendar update, the events are synchronized automatically.
+Now, on every calendar update in the source or target calendar, the events are synchronized automatically.
 
 ### Multiple Source Calendars
 
