@@ -6,11 +6,10 @@ Related to [Google Calendar Corrections](https://github.com/scriptPilot/google-c
 
 ## Installation
 
-⚠️ Before the installation, please export and backup all Google Calendars.
-
-1. Open [Google Apps Script](https://script.google.com/) and create a new project `Google Calendar Synchronization`
-2. Replace `Code.gs` file content with [this code](dist/Code.gs)
-3. Click at the `+` next to `Services`, add `Google Calendar API v3` as `Calendar`
+1. Backup all Google Calendars to be able to restore them if something went wrong
+2. Open [Google Apps Script](https://script.google.com/) and create a new project `Google Calendar Synchronization`
+3. Replace `Code.gs` file content with [this code](dist/Code.gs)
+4. Click at the `+` next to `Services`, add `Google Calendar API v3` as `Calendar`
 
 ## Usage
 
