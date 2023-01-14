@@ -14,9 +14,9 @@ Synchronize Google Calendar events between one or multiple calendars. Made with 
 
 ### Manually
 
-Run the function `onCalendarUpdate()` to synchronize all events from the start date.
+Run the function `onCalendarUpdate()` to start the synchonization.
 
-At the first run, all events after the start date are synchronized. With any other run, only modified events after the start date are synchronized.
+At the first run, all events are synchronized. With any other run, only modified events are synchronized.
 
 ### Trigger
 
@@ -30,15 +30,15 @@ Now, on every calendar update in the source or target calendar, the events are s
 
 Copy the `onCalendarUpdate` function, for example as `onWorkCalendarUpdate` or `onFamilyCalendarUpdate`.
 
-Create a trigger per calendar, select each time a different `on...CalendarUpdate` function and insert a different calendar ID.
+Create two triggers per `on...CalendarUpdate` function and insert the source and target calendar id respectively.
 
 ### Multiple Target Calendars
 
-Inside the `onCalendarUpdate` function, copy the `runSynchronization` function call.
+Inside the `onCalendarUpdate` function, copy the `runOneWaySync` function call.
 
 ### Reset
 
-After any modification to the `onCalendarUpdate` function, you should run the function `resetScript` to reset the script and allow synchronization of all events from the start date again accordingly.
+After any modification to the `onCalendarUpdate` function, you should run the function `resetScript` to reset the script and allow synchronization of all events again.
 
 ## Changelog
 
