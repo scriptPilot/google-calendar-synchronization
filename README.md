@@ -38,7 +38,7 @@ Inside the `onCalendarUpdate` function, copy the `runOneWaySync` function call.
 
 Change the target calendar respectively.
 
-Create a third trigger for the second target calendar.
+Create a third trigger for the second target calendar id.
 
 ### Reset
 
