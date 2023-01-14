@@ -36,6 +36,8 @@ Create two triggers per `on...CalendarUpdate` function and insert the source and
 
 Inside the `onCalendarUpdate` function, copy the `runOneWaySync` function call.
 
+Change the target calendar respectively.
+
 ### Reset
 
 After any modification to the `onCalendarUpdate` function, you should run the function `resetScript` to reset the script and allow synchronization of all events again.
