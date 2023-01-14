@@ -15,6 +15,19 @@ Click at the `+` next to `Files` to add a new script file, you can name it `onCa
 Now you can copy and paste the following example code:
 
 ```js
+function onCalendarUpdate() {
+  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {     
+    if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
+    if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
+    targetEvent.colorId = 0
+    return targetEvent
+  })
+}
+```
+
+Or with comments:
+
+```js
 // This function is called by the trigger
 // You should modify the options and correction function to your needs
 function onCalendarUpdate() {
@@ -25,7 +38,7 @@ function onCalendarUpdate() {
     // The name of the target calendar
     'Family',
     // Previous days
-    0,
+    7,
     // Next days
     21,
     // Correction function, event as input 
@@ -40,19 +53,6 @@ function onCalendarUpdate() {
       return targetEvent
     }
   )
-}
-```
-
-Or without comments:
-
-```js
-function onCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 0, 21, (targetEvent, sourceEvent) => {     
-    if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
-    if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-    targetEvent.colorId = 0
-    return targetEvent
-  })
 }
 ```
 
