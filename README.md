@@ -6,7 +6,7 @@ Related to [Google Calendar Corrections](https://github.com/scriptPilot/google-c
 
 ## Installation
 
-> Before any installation, please export and backup all Google Calendars.
+⚠️ Before the installation, please export and backup all Google Calendars.
 
 1. Open [Google Apps Script](https://script.google.com/) and create a new project `Google Calendar Synchronization`
 2. Replace `Code.gs` file content with [this code](dist/Code.gs)
