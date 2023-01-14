@@ -84,13 +84,13 @@ Copy the `onCalendarUpdate` function, for example as `onWorkCalendarUpdate` or `
 
 ```js
 onWorkCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 0, 21, (targetEvent, sourceEvent) => {  
+  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {  
     ...
     return targetEvent
   })
 }
 onFamilyCalendarUpdate() {
-  runOneWaySync('Family', 'Work', 0, 21, (targetEvent, sourceEvent) => {  
+  runOneWaySync('Family', 'Work', 7, 21, (targetEvent, sourceEvent) => {  
     ...
     return targetEvent
   })
