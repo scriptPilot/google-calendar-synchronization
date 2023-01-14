@@ -30,7 +30,7 @@ Now, on every calendar update in the source or target calendar, the events are s
 
 Copy the `onCalendarUpdate` function, for example as `onWorkCalendarUpdate` or `onFamilyCalendarUpdate`.
 
-Create two triggers per `on...CalendarUpdate` function and insert the source and target calendar id respectively.
+Create two triggers per `on...CalendarUpdate` function and insert the source and target calendar ID respectively.
 
 ### Multiple Target Calendars
 
