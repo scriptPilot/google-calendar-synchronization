@@ -6,7 +6,7 @@ Synchronize Google Calendar events between one or multiple calendars. Made with 
 
 1. Open [Google Apps Script](https://script.google.com/) and create a new project `Google Calendar Synchronization`
 2. Replace `Code.gs` file content with [this code](dist/Code.gs)
-3. Modify the `onCalendarUpdate` function according to your needs ([Google API Documentation](https://developers.google.com/calendar/api/v3/reference/events))
+3. Modify the `onCalendarUpdate` function to your needs ([Google API Documentation](https://developers.google.com/calendar/api/v3/reference/events), [color IDs](https://storage.googleapis.com/support-forums-api/attachment/message-114058730-1008415079352027267.jpg))
 4. Click on the `+` next to `Services`, add `Google Calendar API v3` as `Calendar`
 5. Save and run the function `onCalendarUpdate` and grant permissions (calendar access)
 
