@@ -22,6 +22,7 @@ function onCalendarUpdate() {
     if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
     if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
     targetEvent.colorId = 0
+    targetEvent.description = sourceEvent.description
     return targetEvent
   })
 }
@@ -45,12 +46,16 @@ function onCalendarUpdate() {
     21,
     // Correction function, event as input 
     (targetEvent, sourceEvent) => {     
-      // In this example, all Work events with title "Holiday" are saved to Family as "Family Time"
+      // All Work events with title "Holiday" are saved to Family as "Family Time"
       if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
-      // In this example, all Work events with title "Secret" are not synchronized to "Family"
+      // All Work events with title "Secret" are not synchronized to "Family"
       if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-      // In this example, all events keep the default calendar color
+      // All events keep the default calendar color
       targetEvent.colorId = 0
+      // Add the description to the target event
+      // By default, only the start and end date and the summary
+      // are synchronized to avoid any unintended data exposure
+      targetEvent.description = sourceEvent.description
       // Do not forget to return the target event
       return targetEvent
     }
