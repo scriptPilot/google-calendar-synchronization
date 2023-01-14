@@ -17,7 +17,7 @@ function onCalendarUpdate() {
       if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
       // In this example, all Work events with title "Secret" are not synchronized to "Family"
       if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-      // In this example, use allways default calendar color
+      // In this example, all events keep the default calendar color
       targetEvent.colorId = 0
       // Do not forget to return the target event
       return targetEvent
