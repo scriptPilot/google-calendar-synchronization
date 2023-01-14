@@ -1,43 +1,24 @@
-// This function is called by the trigger
-// You should modify the options and correction function to your needs
-function onCalendarUpdate() {
-  // Run the correction with some options
-  runOneWaySync(
-    // The name of the source calendar
-    'Work',    
-    // The name of the target calendar
-    'Family',
-    // Previous days
-    0,
-    // Next days
-    21,
-    // Correction function, event as input 
-    (targetEvent, sourceEvent) => {     
-      // In this example, all Work events with title "Holiday" are saved to Family as "Family Time"
-      if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
-      // In this example, all Work events with title "Secret" are not synchronized to "Family"
-      if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-      // In this example, all events keep the default calendar color
-      targetEvent.colorId = 0
-      // Do not forget to return the target event
-      return targetEvent
-    }
-  )
-}
-
 // This function reset the script
 // Run it after changing the onCalendarUpdate function
-// It is not required to change this code
 function resetScript() {
   PropertiesService.getUserProperties().deleteAllProperties()  
 }
 
 // This function runs the synchronization itself
-// It is not required to change this code
 function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nextDays, correctionFunction) {
 
   // Log synchronization start
   console.info(`Synchronization started from "${sourceCalendarName}" to "${targetCalendarName}".`)
+
+  // Function to sort an object by key recursively
+  function sortObject(object) {
+    if (typeof object !== 'object') return object
+    const sortedObject = {}
+    Object.keys(object).sort().forEach(key => {
+      sortedObject[key] = sortObject(object[key])
+    })
+    return sortedObject
+  }
 
   // Get source calendar by name
   let sourceCalendar = null
@@ -254,15 +235,4 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   // Log synchronization end
   console.info('Synchronization completed.')
   
-}
-
-// Function to sort an object by key recursively
-// It is not required to change this code
-function sortObject(object) {
-  if (typeof object !== 'object') return object
-  const sortedObject = {}
-  Object.keys(object).sort().forEach(key => {
-    sortedObject[key] = sortObject(object[key])
-  })
-  return sortedObject
 }

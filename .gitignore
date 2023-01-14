@@ -1,2 +1,5 @@
 # System
 .DS_Store
+
+# CLASP
+.clasp.json
