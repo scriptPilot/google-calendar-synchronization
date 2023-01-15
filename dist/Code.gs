@@ -10,6 +10,10 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   // Log synchronization start
   console.info(`Synchronization started from "${sourceCalendarName}" to "${targetCalendarName}".`)
 
+  // Lock the script to avoid corrupt data (up to 30 Min)
+  const lock = LockService.getUserLock()
+  lock.waitLock(30*60*1000)
+
   // Function to sort an object by key recursively
   function sortObject(object) {
     if (typeof object !== 'object') return object
@@ -50,28 +54,38 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   // Get single source events
   // For period between start and end date
   // Exclude deleted events
-  const sourceEvents = []
-  let pageToken = null
-  while (pageToken !== undefined) {
-    const response = Calendar.Events.list(
-      sourceCalendar.id,
-      {
-        pageToken,
-        showDeleted: false,
-        singleEvents: true,
-        timeMin: startDate.toISOString(),
-        timeMax: endDate.toISOString(),
-        updatedMin: lastUpdate
-      }
-    )
-    sourceEvents.push(...response.items)
-    pageToken = response.nextPageToken
+  let sourceEvents = []
+  function getSourceEvents(thisLastUpdate) {
+    let pageToken = null
+    while (pageToken !== undefined) {
+      const response = Calendar.Events.list(
+        sourceCalendar.id,
+        {
+          pageToken,
+          showDeleted: false,
+          singleEvents: true,
+          timeMin: startDate.toISOString(),
+          timeMax: endDate.toISOString(),
+          updatedMin: thisLastUpdate
+        }
+      )
+      sourceEvents.push(...response.items)
+      pageToken = response.nextPageToken
+    }
+  }
+  getSourceEvents(lastUpdate)
+
+  // If lastUpdate !== null but no sourceEvents found,
+  // changes to the target calendar happened
+  // In this case, request all source events
+  if (lastUpdate && !sourceEvents.length) {
+    getSourceEvents(null)
   }
 
   // Get single existing target events
   // With matching source calendar attribute
   // Exlude deleted events
-  const existingEvents = []
+  let existingEvents = []
   pageToken = null
   while (pageToken !== undefined) {
     const response = Calendar.Events.list(
@@ -104,17 +118,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
 
     // If event found, add to the existing events array
     if (existingEvent) existingEvents.push(existingEvent)
-
-  })
-
-  // Get source events for updated existing events
-  existingEvents.forEach(existingEvent => {
-
-    // Get source event by id
-    const sourceEvent = Calendar.Events.get(sourceCalendar.id, existingEvent.extendedProperties?.private?.sourceEventId)
-
-    // If status not cancelled (not deleted), add to source events array
-    if (sourceEvent?.status !== 'cancelled') sourceEvents.push(sourceEvent)
 
   })
 
@@ -155,25 +158,48 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
           }
         }
 
-        // Create the event in Google Calendar
-        const existingEvent = Calendar.Events.insert(targetEvent, targetCalendar.id)
+        try {
 
-        // Log creation
-        console.info(`Created event "${targetEvent.summary}".`)
+          // Create the event in Google Calendar
+          const existingEvent = Calendar.Events.insert(targetEvent, targetCalendar.id)
 
-        // Add the target event to the target event array
-        existingEvents.push(existingEvent)
+          // Log creation
+          console.info(`Created event "${targetEvent.summary}".`)
+
+          // Add the target event to the target event array
+          existingEvents.push(existingEvent)
+
+        } catch (error) {
+
+          // Log error
+          console.error(`Failed to create event "${targetEvent.summary}".`)
+          console.error(error)
+
+        }
 
       }
 
     // Event does already exists but target status === cancelled > delete
     } else if (targetEvent.status === 'cancelled') {
 
-      // Delete event from Google Calendar
-      Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+      try {
 
-      // Log deletion
-      console.info(`Deleted event "${existingEvent.summary}".`)
+        // Delete event from Google Calendar
+        Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+
+        // Remove from existing events array
+        existingEvents = existingEvents.filter(event => event.id !== existingEvent.id)
+
+        // Log deletion
+        console.info(`Deleted event "${existingEvent.summary}".`)
+
+      } catch (error) {
+
+        // Log error
+        console.error(`Failed to delete event "${existingEvent.summary}".`)
+        console.error(error)
+
+      }
 
     // Event does already exist > compare
     } else {
@@ -194,18 +220,29 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
           existingEvent[key] = targetEvent[key]
         })
 
-        // Update event in Google Calendar
-        Calendar.Events.patch(existingEvent, targetCalendar.id, existingEvent.id)
+        try {
 
-        // Update existing events array
-        for (let n = 0; n < existingEvents.length; n++) {
-          if (existingEvents[n].id === existingEvent.id) {
-            existingEvents[n] = existingEvent
+          // Update event in Google Calendar
+          Calendar.Events.patch(existingEvent, targetCalendar.id, existingEvent.id)
+
+          // Update existing events array
+          for (let n = 0; n < existingEvents.length; n++) {
+            if (existingEvents[n].id === existingEvent.id) {
+              existingEvents[n] = existingEvent
+            }
           }
-        }
 
-        // Log update
-        console.info(`Updated event "${targetEvent.summary}".`)
+          // Log update
+          const action = targetEvent.status === 'cancelled' ? 'Deleted' : 'Updated'
+          console.info(`${action} event "${targetEvent.summary}".`)
+
+        } catch (error) {
+
+          // Log error
+          console.error(`Failed to update event "${targetEvent.summary}".`)
+          console.error(error)
+
+        }
 
       }
 
@@ -219,11 +256,24 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
     // Existing event not in source events > delete
     if (!sourceEvents.filter(sourceEvent => existingEvent.extendedProperties.private.sourceEventId === sourceEvent.id).length) {
 
-      // Delete event from Google Calendar
-      Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+      try {
 
-      // Log deletion
-      console.info(`Deleted event "${existingEvent.summary}".`)
+        // Delete event from Google Calendar
+        Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+
+        // Remove from existing events array
+        existingEvents = existingEvents.filter(event => event.id !== existingEvent.id)
+
+        // Log deletion
+        console.info(`Deleted event "${existingEvent.summary}".`)
+
+      } catch (error) {
+
+        // Log error
+        console.error(`Failed to delete event "${existingEvent.summary}".`)
+        console.error(error)
+
+      }
 
     }
 
@@ -231,6 +281,9 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   
   // Save last update to properties
   PropertiesService.getUserProperties().setProperty(sourceCalendar.id + '>' + targetCalendar.id, nextLastUpdate.toISOString())
+
+  // Release the lock
+  lock.releaseLock()
 
   // Log synchronization end
   console.info('Synchronization completed.')
