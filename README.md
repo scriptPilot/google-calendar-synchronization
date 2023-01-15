@@ -91,12 +91,16 @@ Copy the `onCalendarUpdate` function, for example as `onWorkCalendarUpdate` or `
 ```js
 onWorkCalendarUpdate() {
   runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {  
-    ...
+    // Exclude synchronized events
+    if (sourceEvent.extendedProperties?.private?.sourceCalendarId) targetEvent.status = 'cancelled'
+    ...    
     return targetEvent
   })
 }
 onFamilyCalendarUpdate() {
   runOneWaySync('Family', 'Work', 7, 21, (targetEvent, sourceEvent) => {  
+    // Exclude synchronized events
+    if (sourceEvent.extendedProperties?.private?.sourceCalendarId) targetEvent.status = 'cancelled'
     ...
     return targetEvent
   })
