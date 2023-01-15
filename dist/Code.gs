@@ -45,41 +45,24 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   const startDate = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() - previousDays)
   const endDate = new Date(todayEnd.getFullYear(), todayEnd.getMonth(), todayEnd.getDate() + nextDays)
 
-  // Get last update from properties (if property is empty, lastUpdate is null)
-  const lastUpdate = PropertiesService.getUserProperties().getProperty(sourceCalendar.id + '>' + targetCalendar.id)
-
-  // Remember current time to save later as last update time
-  const nextLastUpdate = new Date()
-
   // Get single source events
   // For period between start and end date
   // Exclude deleted events
   let sourceEvents = []
-  function getSourceEvents(thisLastUpdate) {
-    let pageToken = null
-    while (pageToken !== undefined) {
-      const response = Calendar.Events.list(
-        sourceCalendar.id,
-        {
-          pageToken,
-          showDeleted: false,
-          singleEvents: true,
-          timeMin: startDate.toISOString(),
-          timeMax: endDate.toISOString(),
-          updatedMin: thisLastUpdate
-        }
-      )
-      sourceEvents.push(...response.items)
-      pageToken = response.nextPageToken
-    }
-  }
-  getSourceEvents(lastUpdate)
-
-  // If lastUpdate !== null but no sourceEvents found,
-  // changes to the target calendar happened
-  // In this case, request all source events
-  if (lastUpdate && !sourceEvents.length) {
-    getSourceEvents(null)
+  let pageToken = null
+  while (pageToken !== undefined) {
+    const response = Calendar.Events.list(
+      sourceCalendar.id,
+      {
+        pageToken,
+        showDeleted: false,
+        singleEvents: true,
+        timeMin: startDate.toISOString(),
+        timeMax: endDate.toISOString()
+      }
+    )
+    sourceEvents.push(...response.items)
+    pageToken = response.nextPageToken
   }
 
   // Get single existing target events
@@ -94,32 +77,12 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
         pageToken,
         singleEvents: true,
         showDeleted: false,
-        updatedMin: lastUpdate,
         privateExtendedProperty: `sourceCalendarId=${sourceCalendar.id}`
       }
     )
     existingEvents.push(...response.items)
     pageToken = response.nextPageToken
   }
-
-  // Get existing events for updated source events
-  sourceEvents.forEach(sourceEvent => {
-
-    // Get events with matching private property source event id
-    const existingEvent = Calendar.Events.list(
-      targetCalendar.id,
-      {
-        singleEvents: true,
-        showDeleted: false,
-        privateExtendedProperty: `sourceCalendarId=${sourceCalendar.id}`,
-        privateExtendedProperty: `sourceEventId=${sourceEvent.id}`
-      }
-    ).items[0]
-
-    // If event found, add to the existing events array
-    if (existingEvent) existingEvents.push(existingEvent)
-
-  })
 
   // Loop source events
   sourceEvents.forEach(sourceEvent => {
@@ -166,9 +129,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
           // Log creation
           console.info(`Created event "${targetEvent.summary}".`)
 
-          // Add the target event to the target event array
-          existingEvents.push(existingEvent)
-
         } catch (error) {
 
           // Log error
@@ -186,9 +146,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
 
         // Delete event from Google Calendar
         Calendar.Events.remove(targetCalendar.id, existingEvent.id)
-
-        // Remove from existing events array
-        existingEvents = existingEvents.filter(event => event.id !== existingEvent.id)
 
         // Log deletion
         console.info(`Deleted event "${existingEvent.summary}".`)
@@ -225,13 +182,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
           // Update event in Google Calendar
           Calendar.Events.patch(existingEvent, targetCalendar.id, existingEvent.id)
 
-          // Update existing events array
-          for (let n = 0; n < existingEvents.length; n++) {
-            if (existingEvents[n].id === existingEvent.id) {
-              existingEvents[n] = existingEvent
-            }
-          }
-
           // Log update
           const action = targetEvent.status === 'cancelled' ? 'Deleted' : 'Updated'
           console.info(`${action} event "${targetEvent.summary}".`)
@@ -261,9 +211,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
         // Delete event from Google Calendar
         Calendar.Events.remove(targetCalendar.id, existingEvent.id)
 
-        // Remove from existing events array
-        existingEvents = existingEvents.filter(event => event.id !== existingEvent.id)
-
         // Log deletion
         console.info(`Deleted event "${existingEvent.summary}".`)
 
@@ -278,9 +225,6 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
     }
 
   })
-  
-  // Save last update to properties
-  PropertiesService.getUserProperties().setProperty(sourceCalendar.id + '>' + targetCalendar.id, nextLastUpdate.toISOString())
 
   // Release the lock
   lock.releaseLock()

@@ -141,6 +141,10 @@ After any modification to the `onCalendarUpdate` function, you should run the fu
 - `onCalendarUpdate` function removed from the `Code.gs` file
 - `.clasp.json` file removed from the repository
 
+### v1.2
+
+- Simplified algorithm to avoid issues
+
 ## Development
 
 ### Requirements
