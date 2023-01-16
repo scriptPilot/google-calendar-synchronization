@@ -168,12 +168,6 @@ function onAbsencesCalendarUpdate() {
   runOneWaySync('Absences', 'Dennis Monat', 28, 365, targetEvent => targetEvent)
 }
 
-// This function reset the script
-// Run it after changing the onCalendarUpdate function
-function resetScript() {
-  PropertiesService.getUserProperties().deleteAllProperties()  
-}
-
 // This function runs the synchronization itself
 function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nextDays, correctionFunction) {
 
