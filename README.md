@@ -134,7 +134,7 @@ Create a third trigger for the second target calendar id.
 
 After any modification to the `onCalendarUpdate` function, you should run the function `resetScript` to reset the script and allow synchronization of all events again.
 
-### Clean calendar
+### Clean Calendar
 
 To clean any calendar from all synchronized events, you can call the function `cleanCalendar`:
 
