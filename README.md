@@ -130,6 +130,16 @@ Create a third trigger for the second target calendar id.
 
 After any modification to the `onCalendarUpdate` function, you should run the function `resetScript` to reset the script and allow synchronization of all events again.
 
+### Clean calendar
+
+To clean any calendar from all synchronized events, you can call the function `cleanCalendar`:
+
+```js
+function cleanup() {
+  cleanCalendar('Work')
+}
+```
+
 ## Changelog
 
 ### v1
@@ -144,6 +154,10 @@ After any modification to the `onCalendarUpdate` function, you should run the fu
 ### v1.2
 
 - Simplified algorithm to avoid issues
+
+### v1.3
+
+- `cleanCalendar` function added
 
 ## Development
 

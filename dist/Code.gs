@@ -1,3 +1,173 @@
+// This function deletes all synchronized events from a calendar
+// Run this after the removal of calendars or other issues
+function cleanCalendar(calendarName) {
+  
+  // Get source calendar by name
+  let calendar = null
+  Calendar.CalendarList.list().items.forEach(cal => {
+    if (cal.summaryOverride === calendarName || cal.summary === calendarName) calendar = cal
+  })
+  if (!calendar) throw new Error(`Source calendar ${calendarName} not found.`)  
+
+  // List all events
+  let events = []
+  let pageToken = null
+  while (pageToken !== undefined) {
+    const response = Calendar.Events.list(
+      calendar.id,
+      {
+        pageToken,
+        showDeleted: false,
+        singleEvents: false
+      }
+    )
+    events.push(...response.items)
+    pageToken = response.nextPageToken
+  }
+
+  // Loop events
+  events.forEach(event => {
+
+    // Event is synchronized from another calendar
+    if (event.extendedProperties?.private?.sourceCalendarId) {
+
+      try {
+        
+        // Delete the event
+        Calendar.Events.remove(calendar.id, event.id)
+
+        // Log deletion
+        console.info(`Deleted event "${event.summary}".`)
+
+      } catch (error) {
+
+        // Log error
+        console.error(`Failed to delete event "${event.summary}".`)
+        console.error(error)
+
+      }
+
+    }
+
+  })
+
+}
+
+function timeBlockingCorrection(targetEvent, sourceEvent) {
+
+  // Return if no start or end date
+  if (!sourceEvent.start || !sourceEvent.end) return { ...targetEvent, status: 'cancelled' }
+
+  // Get event start and end date
+  const targetEventStart = new Date (targetEvent.start.dateTime || targetEvent.start.date)
+  const targetEventEnd = new Date (targetEvent.end.dateTime || targetEvent.end.date)
+
+  // Exclude weekend
+  if (targetEventStart.getDay() === 0 || targetEventStart.getDay() === 6 || targetEventEnd.getDay() === 0 || targetEventEnd.getDay() === 6) {
+    targetEvent.status = 'cancelled'
+  }
+
+  // Exclude times outside my working hours
+  if (sourceEvent.start.dateTime && sourceEvent.end.dateTime) {
+    const workStart = 6
+    const workEnd = 16
+
+    // Events entirely before or after my working hours
+    if (targetEventEnd.getHours() < workStart || targetEventStart.getHours() >= workEnd) {
+      targetEvent.status = 'cancelled'
+
+    // Events within my working hours
+    } else {
+      if (targetEventStart.getHours() < workStart) {
+        targetEventStart.setHours(workStart)
+        targetEventStart.setMinutes(0)
+        targetEvent.start.dateTime = targetEventStart.toISOString()
+      } 
+      if (targetEventEnd.getHours() >= workEnd) {
+        targetEventEnd.setHours(workEnd)
+        targetEventEnd.setMinutes(0)
+        targetEvent.end.dateTime = targetEventEnd.toISOString()
+      } 
+    }
+  }
+
+  // Exclude absent days
+  // TODO
+
+  // Exclude informations
+  if (sourceEvent.transparency === 'transparent') targetEvent.status = 'cancelled'
+
+  // Set summary to "Busy"
+  targetEvent.summary = 'Busy'
+
+  // Set default calendar event color
+  targetEvent.colorId = '0'
+
+  // Return target event
+  return targetEvent
+
+}
+
+function onTermineCalendarUpdate() {
+  runOneWaySync('Termine', 'Time Blocking', 7, 28, timeBlockingCorrection)
+  runOneWaySync('Termine', 'Dennis Monat', 28, 365, targetEvent => {
+    
+    // set default color
+    targetEvent.colorId = '0'
+
+    // return target event
+    return targetEvent
+
+  })
+}
+function onPlanungCalendarUpdate() {
+  runOneWaySync('Planung', 'Time Blocking', 7, 28, timeBlockingCorrection)
+  runOneWaySync('Planung', 'Dennis Woche', 7, 28, (targetEvent, sourceEvent) => {
+
+    // Exlude free events
+    if (sourceEvent.transparency === 'transparent') targetEvent.status = 'cancelled'
+
+    // set default color
+    targetEvent.colorId = '0'
+
+    // Return target event
+    return targetEvent    
+
+  })
+}
+function onFamilieCalendarUpdate() {
+  runOneWaySync('Familie', 'Time Blocking', 7, 28, timeBlockingCorrection)
+}
+function onMeetingsCalendarUpdate() {
+  runOneWaySync('Meetings', 'Dennis Monat', 28, 365, (targetEvent, sourceEvent) => {
+
+    // Exclude others than allday events
+    if (!sourceEvent.start?.date || !sourceEvent.end?.date) targetEvent.status = 'cancelled'
+
+    // set default color
+    targetEvent.colorId = '0'
+
+    // Return target event
+    return targetEvent
+
+  })
+  runOneWaySync('Meetings', 'Dennis Woche', 7, 28, (targetEvent, sourceEvent) => {
+
+    // Exclude allday events
+    if (sourceEvent.start?.date || sourceEvent.end?.date) targetEvent.status = 'cancelled'
+
+    // set default color
+    targetEvent.colorId = '0'
+
+    // Return target event
+    return targetEvent    
+
+  })
+}
+function onAbsencesCalendarUpdate() {
+  runOneWaySync('Absences', 'Dennis Monat', 28, 365, targetEvent => targetEvent)
+}
+
 // This function reset the script
 // Run it after changing the onCalendarUpdate function
 function resetScript() {
