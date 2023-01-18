@@ -163,6 +163,13 @@ function cleanup() {
 
 - `resetScript` function removed
 
+### v2
+
+- synchronize modified events only
+- consider hidden calendars
+- do not log skipped events
+- `resetScript` function added
+
 ## Development
 
 ### Requirements

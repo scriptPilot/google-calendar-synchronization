@@ -4,7 +4,7 @@ function cleanCalendar(calendarName) {
   
   // Get source calendar by name
   let calendar = null
-  Calendar.CalendarList.list().items.forEach(cal => {
+  Calendar.CalendarList.list({ showHidden: true }).items.forEach(cal => {
     if (cal.summaryOverride === calendarName || cal.summary === calendarName) calendar = cal
   })
   if (!calendar) throw new Error(`Source calendar ${calendarName} not found.`)  
@@ -53,7 +53,10 @@ function cleanCalendar(calendarName) {
 
 }
 
-function timeBlockingCorrection(targetEvent, sourceEvent) {
+function zeitblock815Correction(targetEvent, sourceEvent) {
+  
+  // Exclude synchronized events
+  if (sourceEvent.extendedProperties?.private?.sourceCalendarId) targetEvent.status = 'cancelled'
 
   // Return if no start or end date
   if (!sourceEvent.start || !sourceEvent.end) return { ...targetEvent, status: 'cancelled' }
@@ -62,42 +65,61 @@ function timeBlockingCorrection(targetEvent, sourceEvent) {
   const targetEventStart = new Date (targetEvent.start.dateTime || targetEvent.start.date)
   const targetEventEnd = new Date (targetEvent.end.dateTime || targetEvent.end.date)
 
-  // Exclude weekend
+  // Exclude weekends
   if (targetEventStart.getDay() === 0 || targetEventStart.getDay() === 6 || targetEventEnd.getDay() === 0 || targetEventEnd.getDay() === 6) {
     targetEvent.status = 'cancelled'
   }
 
   // Exclude times outside my working hours
   if (sourceEvent.start.dateTime && sourceEvent.end.dateTime) {
-    const workStart = 6
-    const workEnd = 16
+    const workStart = 8
+    const workEnd = 15
 
     // Events entirely before or after my working hours
-    if (targetEventEnd.getHours() < workStart || targetEventStart.getHours() >= workEnd) {
+    if ((targetEventEnd.getHours()*100+targetEventEnd.getMinutes()) <= workStart*100 || targetEventStart.getHours() >= workEnd) {
       targetEvent.status = 'cancelled'
 
     // Events within my working hours
     } else {
+
+      // Cut time before work start
       if (targetEventStart.getHours() < workStart) {
         targetEventStart.setHours(workStart)
         targetEventStart.setMinutes(0)
         targetEvent.start.dateTime = targetEventStart.toISOString()
       } 
+
+      // Cut time after work end
       if (targetEventEnd.getHours() >= workEnd) {
         targetEventEnd.setHours(workEnd)
         targetEventEnd.setMinutes(0)
         targetEvent.end.dateTime = targetEventEnd.toISOString()
       } 
+
     }
   }
 
   // Exclude absent days
-  // TODO
+  if (targetEvent.status !== 'cancelled') {
+    const targetEventDayStart = new Date(targetEventStart.getFullYear(), targetEventStart.getMonth(), targetEventStart.getDate())
+    const targetEventDayEnd = new Date(targetEventEnd.getFullYear(), targetEventEnd.getMonth(), targetEventEnd.getDate() + 1)
+    const todayEvents = Calendar.Events.list(
+      'primary',
+      {
+        showDeleted: false,
+        singleEvents: true,
+        timeMin: targetEventDayStart.toISOString(),
+        timeMax: targetEventDayEnd.toISOString()
+      }
+    ).items
+    const absentWorkEvents = todayEvents.filter(event => event.colorId === '1' && event.start?.date && event.end?.date)
+    if (absentWorkEvents.length) targetEvent.status = 'cancelled'
+  }
 
-  // Exclude informations
+  // Exclude "free" events
   if (sourceEvent.transparency === 'transparent') targetEvent.status = 'cancelled'
 
-  // Set summary to "Busy"
+  // Set title to "Busy"
   targetEvent.summary = 'Busy'
 
   // Set default calendar event color
@@ -108,64 +130,60 @@ function timeBlockingCorrection(targetEvent, sourceEvent) {
 
 }
 
+function onFamilieCalendarUpdate() {
+  runOneWaySync('Familie', 'Zeitblock 8-15', 7, 28, zeitblock815Correction)
+}
 function onTermineCalendarUpdate() {
-  runOneWaySync('Termine', 'Time Blocking', 7, 28, timeBlockingCorrection)
-  runOneWaySync('Termine', 'Dennis Monat', 28, 365, targetEvent => {
-    
-    // set default color
-    targetEvent.colorId = '0'
-
-    // return target event
-    return targetEvent
-
-  })
+  runOneWaySync('Termine', 'Zeitblock 8-15', 7, 28, zeitblock815Correction)
 }
 function onPlanungCalendarUpdate() {
-  runOneWaySync('Planung', 'Time Blocking', 7, 28, timeBlockingCorrection)
-  runOneWaySync('Planung', 'Dennis Woche', 7, 28, (targetEvent, sourceEvent) => {
-
-    // Exlude free events
-    if (sourceEvent.transparency === 'transparent') targetEvent.status = 'cancelled'
-
-    // set default color
-    targetEvent.colorId = '0'
-
-    // Return target event
-    return targetEvent    
-
-  })
+  runOneWaySync('Planung', 'Zeitblock 8-15', 7, 28, zeitblock815Correction)
 }
-function onFamilieCalendarUpdate() {
-  runOneWaySync('Familie', 'Time Blocking', 7, 28, timeBlockingCorrection)
-}
-function onMeetingsCalendarUpdate() {
-  runOneWaySync('Meetings', 'Dennis Monat', 28, 365, (targetEvent, sourceEvent) => {
 
-    // Exclude others than allday events
-    if (!sourceEvent.start?.date || !sourceEvent.end?.date) targetEvent.status = 'cancelled'
-
-    // set default color
-    targetEvent.colorId = '0'
-
-    // Return target event
+function onAbwesenheitenCalendarUpdate() {
+  runOneWaySync('Abwesenheiten', 'Termine', 28, 365, (targetEvent, sourceEvent) => {
+    targetEvent.transparency = 'transparent'
+    targetEvent.colorId = '1'
     return targetEvent
-
-  })
-  runOneWaySync('Meetings', 'Dennis Woche', 7, 28, (targetEvent, sourceEvent) => {
-
-    // Exclude allday events
-    if (sourceEvent.start?.date || sourceEvent.end?.date) targetEvent.status = 'cancelled'
-
-    // set default color
-    targetEvent.colorId = '0'
-
-    // Return target event
-    return targetEvent    
-
   })
 }
-function onAbsencesCalendarUpdate() {
-  runOneWaySync('Absences', 'Dennis Monat', 28, 365, targetEvent => targetEvent)
+
+function onTermine158CalendarUpdate() {
+  runOneWaySync('Termine 15-8', 'Termine', 28, 365, (targetEvent, sourceEvent) => {
+    targetEvent.location = sourceEvent.location
+    targetEvent.colorId = '9'
+    return targetEvent
+  })
+}
+
+function onInformationenCalendarUpdate() {
+  runOneWaySync('Informationen', 'Planung', 28, 365, (targetEvent, sourceEvent) => {
+    targetEvent.transparency = 'transparent'
+    targetEvent.colorId = '1'
+    return targetEvent
+  })
+}
+
+function onTermine815CalendarUpdate() {
+  runOneWaySync('Termine 8-15', 'Meetings', 7, 28, (targetEvent, sourceEvent) => {
+    targetEvent.location = sourceEvent.location
+    targetEvent.colorId = '0'
+    return targetEvent
+  })
+}
+
+function cleanAllCalendars() {
+  throw new Error('Secured')
+  cleanCalendar('Termine')
+  cleanCalendar('Planung')
+  cleanCalendar('Meetings')
+  cleanCalendar('Zeitblock 8-15')
+}
+
+// This function reset the script
+// Run it after changing the onCalendarUpdate function
+function resetScript() {
+  PropertiesService.getUserProperties().deleteAllProperties()  
 }
 
 // This function runs the synchronization itself
@@ -190,14 +208,14 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
 
   // Get source calendar by name
   let sourceCalendar = null
-  Calendar.CalendarList.list().items.forEach(cal => {
+  Calendar.CalendarList.list({ showHidden: true }).items.forEach(cal => {
     if (cal.summaryOverride === sourceCalendarName || cal.summary === sourceCalendarName) sourceCalendar = cal
   })
   if (!sourceCalendar) throw new Error(`Source calendar ${sourceCalendarName} not found.`)
 
   // Get target calendar by name
   let targetCalendar = null
-  Calendar.CalendarList.list().items.forEach(cal => {
+  Calendar.CalendarList.list({ showHidden: true }).items.forEach(cal => {
     if (cal.summaryOverride === targetCalendarName || cal.summary === targetCalendarName) targetCalendar = cal
   })
   if (!targetCalendar) throw new Error(`Target calendar ${targetCalendarName} not found.`)
@@ -209,6 +227,13 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
   const startDate = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() - previousDays)
   const endDate = new Date(todayEnd.getFullYear(), todayEnd.getMonth(), todayEnd.getDate() + nextDays)
 
+  // Get last update from properties (if property is empty, last update will be 1970-01-01)
+  const lastUpdateGiven = PropertiesService.getUserProperties().getProperty(sourceCalendar.id + '>' + targetCalendar.id)
+  const lastUpdate = new Date(lastUpdateGiven)
+
+  // Remember current time to save later as last update time
+  const nextLastUpdate = new Date()
+  
   // Get single source events
   // For period between start and end date
   // Exclude deleted events
@@ -219,10 +244,11 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
       sourceCalendar.id,
       {
         pageToken,
-        showDeleted: false,
+        showDeleted: lastUpdateGiven ? true : false,
         singleEvents: true,
         timeMin: startDate.toISOString(),
-        timeMax: endDate.toISOString()
+        timeMax: endDate.toISOString(),
+        updatedMin: lastUpdateGiven ? lastUpdate.toISOString() : null
       }
     )
     sourceEvents.push(...response.items)
@@ -240,12 +266,38 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
       {
         pageToken,
         singleEvents: true,
-        showDeleted: false,
+        showDeleted: lastUpdateGiven ? true : false,
+        updatedMin: lastUpdateGiven ? lastUpdate.toISOString() : null,
         privateExtendedProperty: `sourceCalendarId=${sourceCalendar.id}`
       }
     )
     existingEvents.push(...response.items)
     pageToken = response.nextPageToken
+  }
+
+  // If lastUpdateGiven, get existingEvents for updated sourceEvents
+  if (lastUpdateGiven) {
+    sourceEvents.forEach(sourceEvent => {
+      if (!existingEvents.filter(event => event.extendedProperties?.private?.sourceEventId === sourceEvent.id).length) {
+        existingEvents.push(...Calendar.Events.list(
+          targetCalendar.id,
+          {
+            privateExtendedProperty: `sourceCalendarId=${sourceCalendar.id}`,
+            privateExtendedProperty: `sourceEventId=${sourceEvent.id}`
+          }
+        ).items)
+      }
+    })
+  }
+
+  // If lastUpdateGiven, get sourceEvents for updated existingEvents
+  if (lastUpdateGiven) {
+    existingEvents.forEach(existingEvent => {
+      if (!sourceEvents.filter(event => event.id === existingEvent.extendedProperties?.private?.sourceEventId).length) {
+        const sourceEvent = Calendar.Events.get(sourceCalendar.id, existingEvent.extendedProperties?.private?.sourceEventId)
+        if (sourceEvent) sourceEvents.push(sourceEvent)
+      }
+    })
   }
 
   // Loop source events
@@ -267,15 +319,9 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
 
     // Event does not exist in target events > create event  
     if (!existingEvent) {
-      
-      // Skip the target event if status === 'cancelled' (to be applied in the correction function)
-      if (targetEvent.status === 'cancelled') {
-
-        // Log skip
-        console.info(`Skipped event "${targetEvent.summary}".`)
 
       // Create the target event
-      } else {
+      if (targetEvent.status !== 'cancelled') {
 
         // Add the source calendar id and source event id as private property
         targetEvent.extendedProperties = {
@@ -306,19 +352,25 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
     // Event does already exists but target status === cancelled > delete
     } else if (targetEvent.status === 'cancelled') {
 
-      try {
+      // Do not try to delete not existing events
+      // Happens because deleted target events are considered as modifed in next run
+      if (existingEvent?.status !== 'cancelled') {
 
-        // Delete event from Google Calendar
-        Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+        try {
 
-        // Log deletion
-        console.info(`Deleted event "${existingEvent.summary}".`)
+          // Delete event from Google Calendar
+          Calendar.Events.remove(targetCalendar.id, existingEvent.id)
 
-      } catch (error) {
+          // Log deletion
+          console.info(`Deleted event "${existingEvent.summary}".`)
 
-        // Log error
-        console.error(`Failed to delete event "${existingEvent.summary}".`)
-        console.error(error)
+        } catch (error) {
+
+          // Log error
+          console.error(`Failed to delete event "${existingEvent.summary}".`)
+          console.error(error)
+
+        }
 
       }
 
@@ -370,25 +422,34 @@ function runOneWaySync(sourceCalendarName, targetCalendarName, previousDays, nex
     // Existing event not in source events > delete
     if (!sourceEvents.filter(sourceEvent => existingEvent.extendedProperties.private.sourceEventId === sourceEvent.id).length) {
 
-      try {
+      // Do not try to delete if existing event already deleted
+      // Happens because deleted target events are considered as modifed in next run
+      if (existingEvent.status !== 'cancelled') {
 
-        // Delete event from Google Calendar
-        Calendar.Events.remove(targetCalendar.id, existingEvent.id)
+        try {
 
-        // Log deletion
-        console.info(`Deleted event "${existingEvent.summary}".`)
+          // Delete event from Google Calendar
+          Calendar.Events.remove(targetCalendar.id, existingEvent.id)
 
-      } catch (error) {
+          // Log deletion
+          console.info(`Deleted event "${existingEvent.summary}".`)
 
-        // Log error
-        console.error(`Failed to delete event "${existingEvent.summary}".`)
-        console.error(error)
+        } catch (error) {
+
+          // Log error
+          console.error(`Failed to delete event "${existingEvent.summary}".`)
+          console.error(error)
+
+        }
 
       }
 
     }
 
   })
+
+  // Save last update to properties
+  PropertiesService.getUserProperties().setProperty(sourceCalendar.id + '>' + targetCalendar.id, nextLastUpdate.toISOString())
 
   // Release the lock
   lock.releaseLock()
