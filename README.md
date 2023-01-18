@@ -82,7 +82,9 @@ Create two triggers for the `onCalendarUpdate` function, triggered by calendar u
 - one for the source calencar ID
 - one for the target calendar ID
 
-Now, on every calendar update in the source or target calendar, the events are synchronized automatically.
+Now, on every calendar update in the source calendar, the changes are synchronized to the target calendar.
+
+On every change to synchronized events in the target calendar, the changes are overwritten from the source calendar again.
 
 ### Multiple Source Calendars
 
