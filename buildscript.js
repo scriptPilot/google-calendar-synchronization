@@ -13,6 +13,9 @@ fs.readdir('lib', (err, files) => {
   // Filter for .js files
   files = files.filter(file => /\.js$/.test(file))
 
+  // Filter out onCalendarUpdate.js file
+  files = files.filter(file => file !== 'onCalendarUpdate.js')
+
   // Start array of code blocks
   const codeBlocks = []
 
