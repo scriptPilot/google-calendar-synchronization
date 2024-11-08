@@ -86,7 +86,8 @@ This allows you also to keep properties from the source event which are not sync
 
 ```js
 function correctionFunction(targetEvent, sourceEvent) {
-  targetEvent.attachments = sourceEvent.attachments
+  targetEvent.description = sourceEvent.description
+  targetEvent.location = sourceEvent.location
   return targetEvent
 }
 ```
