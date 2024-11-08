@@ -89,3 +89,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 - added many helper functions
 - use default arguments for previous days, next days, correction function
 - improved documentation
+
+### v3.1
+
+- forgot the Code.gs update in v3
