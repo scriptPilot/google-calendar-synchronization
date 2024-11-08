@@ -23,7 +23,7 @@ fs.readdir('lib', (err, files) => {
   const now = new Date()
   const date = now.toISOString().substr(0, 10)
   const link = 'https://github.com/scriptPilot/google-calendar-synchronization'
-  codeBlocks.push(`// Google Calendar Synchronization, build at ${date}\n// Source: ${link}`)
+  codeBlocks.push(`// Google Calendar Synchronization, build on ${date}\n// Source: ${link}`)
 
   // Loop files
   files.forEach(file => {
