@@ -28,7 +28,7 @@ The following examples are based on assumed calendars `Work` and `Family`.
 
     - Allow the prompt and grant the requested calendar access.
     - At the first run, all events within the [time range](#time-range) are synchronized.
-    - With any other run, only modified events are synchronized.
+    - With any other run, only modified source events are synchronized.
 
 3. On the left menu, select "Trigger" and add a new trigger:
 
