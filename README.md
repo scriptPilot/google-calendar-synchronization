@@ -148,17 +148,28 @@ Do not forget to configure two triggers respectively.
 
 No yet implemented. There is already a [feature request](https://github.com/scriptPilot/google-calendar-synchronization/issues/6) created. Feel free to support.
 
+## Update
+
+To update the script version, replace the `Code.gs` file content with [this code](dist/Code.gs).
+
+## Deinstallation
+
 ### Calendar Cleanup
 
-Use the `cleanCalendar` function to remove all synchronized events from a calendar.
+Use the `cleanCalendar` function to remove all synchronized events from all calendars.
 
 This will not remove any source event.
 
 ```js
 function cleanup() {
   cleanCalendar('Family')
+  cleanCalendar('Work')
 }
 ```
+
+### Remove the Project
+
+Remove the Google Apps Script project. This will also remove all triggers.
 
 ## Support
 
