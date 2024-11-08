@@ -115,29 +115,6 @@ By default, only updated source events are synchronized. To apply modified rules
 
 For test purpose, you can also add it to the beginning of the `onCalendarUpdate` function. Do not forget to remove it again after completing the development.
 
-### Two-Way Synchronization
-
-To realize a two-way synchronization, you need to create two one-way synchronizations.
-
-The correction function has to exclude synchronized events for both.
-
-```js
-function correctionFunction(targetEvent, sourceEvent) {
-  if (isSynchronizedEvent(sourceEvent)) targetEvent.status = 'cancelled'
-  return targetEvent
-}
-
-function onWorkCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 7, 21, correctionFunction)
-}
-
-function onFamilyCalendarUpdate() {
-  runOneWaySync('Family', 'Work', 7, 21)
-}
-```
-
-Finally, you need to create two triggers for both functions, with two different calendar IDs.
-
 ### Multiple Source Calendars
 
 Multiple source calendars can be synchronized to the same target calendar.
@@ -167,9 +144,15 @@ function onCalendarUpdate() {
 
 Do not forget to configure two triggers respectively.
 
+### Two-Way Synchronization
+
+No yet implemented. There is already a [feature request](https://github.com/scriptPilot/google-calendar-synchronization/issues/6) created. Feel free to support.
+
 ### Calendar Cleanup
 
-Use the `cleanCalendar` function to remove all synchronized events from a calendar:
+Use the `cleanCalendar` function to remove all synchronized events from a calendar.
+
+This will not remove any source event.
 
 ```js
 function cleanup() {
