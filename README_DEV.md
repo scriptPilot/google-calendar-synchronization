@@ -81,3 +81,11 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 - consider hidden calendars
 - do not log skipped events
 - `resetScript` function added
+
+### v3
+
+- lock script to prevent parallel execution
+- limit requests to avoid to exceed the quota
+- added many helper functions
+- use default arguments for previous days, next days, correction function
+- improved documentation
