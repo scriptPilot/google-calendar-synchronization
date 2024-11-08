@@ -50,7 +50,8 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
     ```
 
 5. Update the changelog.
-6. Commit and push the changes to GitHub.
+6. Set a new version tag in GitHub Desktop.
+7. Commit and push the changes to GitHub.
 
 ## Changelog
 
