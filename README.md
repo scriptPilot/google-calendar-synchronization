@@ -7,7 +7,7 @@ Made with Google Apps Script, related to [Google Calendar Corrections](https://g
 ## Installation
 
 1. Backup all Google Calendars to be able to restore them if something went wrong.
-2. Open [Google Apps Script](https://script.google.com/) and create a new project `Calendar Synchonization`.
+2. Open [Google Apps Script](https://script.google.com/) and create a new project `Calendar Synchronization`.
 3. Replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/refs/heads/main/dist/Code.gs).
 4. Click at the `+` next to `Services`, add `Google Calendar API` `v3` as `Calendar`.
 
