@@ -1,3 +1,6 @@
+// Build at 2024-11-08
+// Source: https://github.com/scriptPilot/google-calendar-synchronization
+
 // This function deletes all synchronized events from a calendar
 // Run this after the removal of calendars or other issues
 function cleanCalendar(calendarName) {
