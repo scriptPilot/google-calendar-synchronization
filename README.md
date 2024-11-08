@@ -34,7 +34,7 @@ The following examples are based on assumed calendars `Work` and `Family`.
 
     - run function `onCalendarUpdate`
     - trigger source `calendar`
-    - calendar email `work-calendar-id` (to be find in the Google Calendar settings)
+    - calendar email `work-calendar-id` (to be found in the Google Calendar settings)
 
 Now, any change to the `Work` calendar is synchronized to the `Family` calendar.
 
