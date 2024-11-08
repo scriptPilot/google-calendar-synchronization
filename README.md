@@ -113,7 +113,7 @@ isDeclinedByMe(sourceEvent)      // true if declined by me
 
 By default, only updated source events are synchronized. To apply modified rules you want to reset the script to allow a full synchronization again. This can be done by running the function `resetScript` manually.
 
-For test purpose, you can also add it to the beginning of the `onCalendarUpdate` function. Do not forget to remove it again after competing the development.
+For test purpose, you can also add it to the beginning of the `onCalendarUpdate` function. Do not forget to remove it again after completing the development.
 
 ### Two-Way Synchronization
 
