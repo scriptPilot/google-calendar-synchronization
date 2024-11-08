@@ -27,7 +27,7 @@ The following examples are based on assumed calendars `Work` and `Family`.
 2. Save the changes and run the `onCalendarUpdate` function manually.
 
     - Allow the prompt and grant the requested calendar access.
-    - At the first run, all events are synchronized.
+    - At the first run, all events within the [time range](#time-range) are synchronized.
     - With any other run, only modified events are synchronized.
 
 3. On the left menu, select "Trigger" and add a new trigger:
