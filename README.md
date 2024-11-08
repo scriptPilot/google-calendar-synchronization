@@ -1,194 +1,181 @@
 # Google Calendar Synchronization
 
-Synchronize Google Calendar events between one or multiple calendars. Made with Google Apps Script.
+Synchronize Google Calendar events between one or multiple calendars.
 
-Related to [Google Calendar Corrections](https://github.com/scriptPilot/google-calendar-correction).
+Made with Google Apps Script, related to [Google Calendar Corrections](https://github.com/scriptPilot/google-calendar-correction).
 
 ## Installation
 
-1. Backup all Google Calendars to be able to restore them if something went wrong
-2. Open [Google Apps Script](https://script.google.com/) and create a new project `Google Calendar Synchronization`
-3. Replace `Code.gs` file content with [this code](dist/Code.gs)
-4. Click at the `+` next to `Services`, add `Google Calendar API v3` as `Calendar`
+1. Backup all Google Calendars to be able to restore them if something went wrong.
+2. Open [Google Apps Script](https://script.google.com/) and create a new project `Calendar Synchonization`.
+3. Replace the `Code.gs` file content with [this code](dist/Code.gs).
+4. Click at the `+` next to `Services`, add `Google Calendar API` `v3` as `Calendar`.
 
 ## Usage
 
-Click at the `+` next to `Files` to add a new script file, you can name it `onCalendarUpdate`.
+The following examples are based on assumed calendars `Work` and `Family`.
 
-Now you can copy and paste the following example code:
+### Synchronization
+
+1. Click the `+` next to `Files` to add a new script file `onCalendarUpdate`:
+
+    ```js
+    function onCalendarUpdate() {
+      runOneWaySync('Work', 'Family')
+    }
+    ```
+2. Save the changes and run the `onCalendarUpdate` function manually.
+
+    - Allow the prompt and grant the requested calendar access.
+    - At the first run, all events are synchronized.
+    - With any other run, only modified events are synchronized.
+
+3. On the left menu, select "Trigger" and add a new trigger:
+
+    - run function `onCalendarUpdate`
+    - trigger source `calendar`
+    - calendar email `work-calendar-id` (to be find in the Google Calendar settings)
+
+Now, any change to the `Work` calendar is synchronized to the `Family` calendar.
+
+### Time Range
+
+The synchronization time range can be specified, by default it is -7 / +21 days.
+
+Previous and next days can be specified with third and fourth parameter:
 
 ```js
 function onCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {     
-    if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
-    if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-    targetEvent.colorId = '0'
-    targetEvent.description = sourceEvent.description
-    return targetEvent
-  })
+  runOneWaySync('Work', 'Family', 7, 21)
 }
 ```
 
-Or with comments:
+### Correction Function
+
+As fifth argument, the `runOneWaySync` function accepts a correction function.
+
+#### Basic Usage
+
+With this correction function you can modify the target events.
 
 ```js
-// This function is called by the trigger
-// You should modify the options and correction function to your needs
+function correctionFunction(targetEvent) {
+  targetEvent.colorId = '6' // apply orange color to all target events
+  return targetEvent        // do not forget to return the target event
+}
+
 function onCalendarUpdate() {
-  // Run the correction with some options
-  runOneWaySync(
-    // The name of the source calendar
-    'Work',    
-    // The name of the target calendar
-    'Family',
-    // Previous days
-    7,
-    // Next days
-    21,
-    // Correction function, event as input 
-    (targetEvent, sourceEvent) => {     
-      // All Work events with title "Holiday" are saved to Family as "Family Time"
-      if (sourceEvent.summary === 'Holiday') targetEvent.summary = 'Family Time'
-      // All Work events with title "Secret" are not synchronized to "Family"
-      if (sourceEvent.summary === 'Secret') targetEvent.status = 'cancelled'
-      // All events keep the default calendar color
-      targetEvent.colorId = '0'
-      // Add the description to the target event
-      // By default, only the start and end date and the summary
-      // are synchronized to avoid any unintended data exposure
-      targetEvent.description = sourceEvent.description
-      // Do not forget to return the target event
-      return targetEvent
-    }
-  )
+  runOneWaySync('Work', 'Family', 7, 21, correctionFunction)
 }
 ```
 
 Further reading for the correction function: [Google API Documentation](https://developers.google.com/calendar/api/v3/reference/events) and [color IDs](https://storage.googleapis.com/support-forums-api/attachment/message-114058730-1008415079352027267.jpg)
 
-Finally, save the changes and run the `onCalendarUpdate` function manually.
+#### Source Event
 
-On the first run, you have to grant permissions (calendar access) to the script.
+You can also use the source event as second argument of the correction function to make use of properties which are not part of the target event by default.
 
-### Manually
+```js
+function correctionFunction(targetEvent, sourceEvent) {
+  targetEvent.colorId = sourceEvent.attendees ? '6' : '0'
+  return targetEvent
+}
+```
 
-Run the function `onCalendarUpdate()` to start the synchonization.
+This allows you also to keep properties from the source event which are not synchronized by default.
 
-At the first run, all events are synchronized. With any other run, only modified events are synchronized.
+```js
+function correctionFunction(targetEvent, sourceEvent) {
+  targetEvent.attachments = sourceEvent.attachments
+  return targetEvent
+}
+```
 
-### Trigger
+#### Helper Functions
 
-Create two triggers for the `onCalendarUpdate` function, triggered by calendar updates:
-- one for the source calencar ID
-- one for the target calendar ID
+There are a couple of helper function available to support the correction function.
 
-Now, on every calendar update in the source calendar, the changes are synchronized to the target calendar.
+```js
+isSynchronizedEvent(sourceEvent) // true if synchronized from any other calendar
+isRecurringEvent(sourceEvent)    // true if is a recurring event
+isOOOEvent(sourceEvent)          // true if out of office event
+isAlldayEvent(sourceEvent)       // true if allday event
+isOnWeekend(sourceEvent)         // true if is on Saturday on Sunday
+isBusyEvent(sourceEvent)         // true if status is busy
+isOpenByMe(sourceEvent)          // true if needs action by me
+isAcceptedByMe(sourceEvent)      // true if accepted by me
+isTentativeByMe(sourceEvent)     // true if responded tentative by me
+isDeclinedByMe(sourceEvent)      // true if declined by me
+```
 
-On every change to synchronized events in the target calendar, the changes are overwritten from the source calendar again.
+### Script Reset
+
+By default, only updated source events are synchronized. To apply modified rules you want to reset the script to allow a full synchronization again. This can be done by running the function `resetScript` manually.
+
+For test purpose, you can also add it to the beginning of the `onCalendarUpdate` function. Do not forget to remove it again after competing the development.
+
+### Two-Way Synchronization
+
+To realize a two-way synchronization, you need to create two one-way synchronizations.
+
+The correction function has to exclude synchronized events for both.
+
+```js
+function correctionFunction(targetEvent, sourceEvent) {
+  if (isSynchronizedEvent(sourceEvent)) targetEvent.status = 'cancelled'
+  return targetEvent
+}
+
+function onWorkCalendarUpdate() {
+  runOneWaySync('Work', 'Family', 7, 21, correctionFunction)
+}
+
+function onFamilyCalendarUpdate() {
+  runOneWaySync('Family', 'Work', 7, 21)
+}
+```
+
+Finally, you need to create two triggers for both functions, with two different calendar IDs.
 
 ### Multiple Source Calendars
 
-Copy the `onCalendarUpdate` function, for example as `onWorkCalendarUpdate` or `onFamilyCalendarUpdate`.
+Multiple source calendars can be synchronized to the same target calendar.
 
 ```js
-onWorkCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {  
-    // Exclude synchronized events
-    if (sourceEvent.extendedProperties?.private?.sourceCalendarId) targetEvent.status = 'cancelled'
-    ...    
-    return targetEvent
-  })
+function onWorkCalendarUpdate() {
+  runOneWaySync('Work', 'Family')
 }
-onFamilyCalendarUpdate() {
-  runOneWaySync('Family', 'Work', 7, 21, (targetEvent, sourceEvent) => {  
-    // Exclude synchronized events
-    if (sourceEvent.extendedProperties?.private?.sourceCalendarId) targetEvent.status = 'cancelled'
-    ...
-    return targetEvent
-  })
+
+function onSecondWorkCalendarUpdate() {
+  runOneWaySync('Second Work', 'Family')
 }
 ```
 
-Create two triggers per `on...CalendarUpdate` function and insert the source and target calendar ID respectively.
+Do not forget to configure two triggers respectively.
 
 ### Multiple Target Calendars
 
-Inside the `onCalendarUpdate` function, copy the `runOneWaySync` function call.
-
-Change the target calendar respectively.
+One source calendar can be synchronized to multiple target calendars.
 
 ```js
-function onCalendarUpdate() {
-  runOneWaySync('Work', 'Family', 7, 21, (targetEvent, sourceEvent) => {     
-    ...
-    return targetEvent
-  })
-  runOneWaySync('Work', 'Personal', 7, 21, (targetEvent, sourceEvent) => {     
-    ...
-    return targetEvent
-  })
+function onCalendarUpdate() {
+  runOneWaySync('Work', 'Family')
+  runOneWaySync('Work', 'Second Family')
 }
 ```
 
-Create a third trigger for the second target calendar id.
+Do not forget to configure two triggers respectively.
 
-### Clean Calendar
+### Calendar Cleanup
 
-To clean any calendar from all synchronized events, you can call the function `cleanCalendar`:
+Use the `cleanCalendar` function to remove all synchronized events from a calendar:
 
 ```js
 function cleanup() {
-  cleanCalendar('Work')
+  cleanCalendar('Family')
 }
 ```
 
-## Changelog
+## Support
 
-### v1
-
-- Initial release
-
-### v1.1
-
-- `onCalendarUpdate` function removed from the `Code.gs` file
-- `.clasp.json` file removed from the repository
-
-### v1.2
-
-- Simplified algorithm to avoid issues
-
-### v1.3
-
-- `cleanCalendar` function added
-
-### v1.4
-
-- `resetScript` function removed
-
-### v2
-
-- synchronize modified events only
-- consider hidden calendars
-- do not log skipped events
-- `resetScript` function added
-
-## Development
-
-### Requirements
-
-* [Node.js](https://nodejs.org/) and NPM installed
-* [Command Line Apps Script Projects](https://github.com/google/clasp) installed globally
-
-### Installation
-
-1. Clone this repository
-2. Run `clasp login` to login to Google if not done before
-3. Run `clasp create --type standalone --rootDir lib --title "Google Calendar Synchronization"` to create a new Apps Script Project
-4. Run `mv lib/.clasp.json .clasp.json` to move the CLASP config file to the project root
-
-### Workflow
-
-* Run `clasp push` to replace the remote files with the local ones
-* Run `clasp open` to open the project in the [Cloud IDE](https://script.google.com/)
-* Run `clasp pull` to replace the local files with the remote ones
-* Run `node buildscript.js` to build the `Code.gs` file
+Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-synchronization/issues) for bugs, feature requests or any other question.
