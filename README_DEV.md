@@ -93,3 +93,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v3.1
 
 - forgot the Code.gs update in v3
+
+### v3.2
+
+- add date and source to build file
