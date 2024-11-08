@@ -98,10 +98,10 @@ There are a couple of helper function available to support the correction functi
 
 ```js
 isSynchronizedEvent(sourceEvent) // true if synchronized from any other calendar
-isRecurringEvent(sourceEvent)    // true if is a recurring event
+isRecurringEvent(sourceEvent)    // true if recurring event
 isOOOEvent(sourceEvent)          // true if out of office event
 isAlldayEvent(sourceEvent)       // true if allday event
-isOnWeekend(sourceEvent)         // true if is on Saturday on Sunday
+isOnWeekend(sourceEvent)         // true if on Saturday or Sunday
 isBusyEvent(sourceEvent)         // true if status is busy
 isOpenByMe(sourceEvent)          // true if needs action by me
 isAcceptedByMe(sourceEvent)      // true if accepted by me
