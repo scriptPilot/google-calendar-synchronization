@@ -19,6 +19,12 @@ fs.readdir('lib', (err, files) => {
   // Start array of code blocks
   const codeBlocks = []
 
+  // Add date and link
+  const now = new Date()
+  const date = now.toISOString().substr(0, 10)
+  const link = 'https://github.com/scriptPilot/google-calendar-synchronization'
+  codeBlocks.push(`// Build at ${date}\n// Source: ${link}`)
+
   // Loop files
   files.forEach(file => {
 
