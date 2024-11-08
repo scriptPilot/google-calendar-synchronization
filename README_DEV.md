@@ -42,7 +42,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
     ```
     clasp push && clasp open
     ````
-3. Test the changes in the Cloud IDE according to the [documentation](#documentation).
+3. Test the changes in the Cloud IDE according to the documentation.
 4. Build the `dist/Code.gs` file:
 
     ```
