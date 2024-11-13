@@ -91,6 +91,10 @@ function isAcceptedByMe(event) {
   return event.attendees?.filter(attendee => attendee.email === Session.getEffectiveUser().getEmail())[0]?.responseStatus === 'accepted'
 }
 
+function isTentativeByMe(event) {
+  return event.attendees?.filter(attendee => attendee.email === Session.getEffectiveUser().getEmail())[0]?.responseStatus === 'tentative'
+}
+
 function isDeclinedByMe(event) {
   return event.attendees?.filter(attendee => attendee.email === Session.getEffectiveUser().getEmail())[0]?.responseStatus === 'declined'
 }
