@@ -86,11 +86,14 @@ This allows you also to keep properties from the source event which are not sync
 
 ```js
 function correctionFunction(targetEvent, sourceEvent) {
+  targetEvent.summary = sourceEvent.summary
   targetEvent.description = sourceEvent.description
   targetEvent.location = sourceEvent.location
   return targetEvent
 }
 ```
+
+To avoid any unwanted data exposure, by default, only the start date, end date, recurrence rule and `Busy` as default summary are synchronized.
 
 #### Helper Functions
 
