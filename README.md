@@ -153,7 +153,7 @@ No yet implemented. There is already a [feature request](https://github.com/scri
 
 ## Update
 
-To update the script version, replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/refs/heads/main/dist/Code.gs).
+To update the script version, replace the `Code.gs` file content with [this code](dist/Code.gs).
 
 ## Deinstallation
 
