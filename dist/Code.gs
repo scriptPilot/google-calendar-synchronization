@@ -1,5 +1,6 @@
 // Google Calendar Synchronization, build on 2025-01-14
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
+
 function runOneWaySync(
   sourceCalendarName,
   targetCalendarName,

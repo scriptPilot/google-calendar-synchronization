@@ -20,7 +20,7 @@ glob("lib/**")
     const link =
       "https://github.com/scriptPilot/google-calendar-synchronization";
     codeBlocks.push(
-      `// Google Calendar Synchronization, build on ${date}\n// Source: ${link}`,
+      `// Google Calendar Synchronization, build on ${date}\n// Source: ${link}\n`,
     );
 
     // Loop files
