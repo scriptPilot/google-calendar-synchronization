@@ -487,6 +487,12 @@ function createTargetEvent(sourceEvent, sourceCalendar) {
   const defaultSummary = "Busy";
   if (!defaultProps.includes("summary")) targetEvent.summary = defaultSummary;
 
+  // Add missing timezone to recurring events
+  targetEvent.start.timeZone =
+    targetEvent.start.timeZone || sourceCalendar.timeZone;
+  targetEvent.end.timeZone =
+    targetEvent.end.timeZone || sourceCalendar.timeZone;
+
   // Add source calendar id
   targetEvent.extendedProperties = {
     private: {
