@@ -9,7 +9,7 @@ glob("lib/**")
     files = files.filter((file) => /\.js$/.test(file));
 
     // Filter out onCalendarUpdate.js file
-    files = files.filter((file) => file !== "onCalendarUpdate.js");
+    files = files.filter((file) => !/onCalendarUpdate\.js$/.test(file));
 
     // Start array of code blocks
     const codeBlocks = [];
