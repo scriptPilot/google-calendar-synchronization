@@ -4,5 +4,8 @@
 # CLASP
 .clasp.json
 
+# NPM
+node_modules/
+
 # onCalendarUpdate.js
 onCalendarUpdate.js

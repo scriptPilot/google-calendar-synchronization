@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "npx prettier buildscript.js lib --write && node buildscript"
+  },
+  "dependencies": {
+    "prettier": "^3.4.2"
+  }
+}
