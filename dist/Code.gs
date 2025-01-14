@@ -348,33 +348,6 @@ function cleanCalendar(calendarName) {
   });
 }
 
-function deleteEventsAfter9PM() {
-  const now = new Date();
-
-  const calendar = CalendarApp.getDefaultCalendar();
-
-  const events = calendar.getEvents(
-    new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-    new Date(now.getTime() + 9999 * 24 * 60 * 60 * 1000),
-  );
-
-  // Iterate through events
-  events.forEach((event) => {
-    // Get the creation time of the event
-    const createdTime = event.getDateCreated();
-
-    // Check if the event was created after 9 PM
-    if (createdTime >= new Date(now.getTime() - 2 * 60 * 60 * 1000)) {
-      Logger.log(
-        `Deleting event: ${event.getTitle()} created at ${createdTime}`,
-      );
-      event.deleteEvent(); // Delete the event
-    }
-  });
-
-  Logger.log("Completed deleting events created after 9 PM.");
-}
-
 function sortRecurrence(recArr) {
   return recArr
     .map((recItem) => {
