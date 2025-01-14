@@ -46,7 +46,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 4. Build the `dist/Code.gs` file:
 
     ```
-    node buildscript.js
+    npm run build
     ```
 
 5. Update the changelog.
