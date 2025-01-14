@@ -1,8 +1,10 @@
 {
+  "version": "3.3.0",
   "scripts": {
-    "build": "npx prettier buildscript.js lib --write && node buildscript"
+    "build": "npx prettier scripts lib --write && node scripts/build"
   },
   "dependencies": {
+    "glob": "^11.0.1",
     "prettier": "^3.4.2"
   }
 }

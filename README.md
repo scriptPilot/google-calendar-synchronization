@@ -8,7 +8,7 @@ Made with Google Apps Script, related to [Google Calendar Corrections](https://g
 
 1. Backup all Google Calendars to be able to restore them if something went wrong.
 2. Open [Google Apps Script](https://script.google.com/) and create a new project `Calendar Synchronization`.
-3. Replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/refs/heads/main/dist/Code.gs).
+3. Replace the `Code.gs` file content with [this code](dist/Code.gs).
 4. Click at the `+` next to `Services`, add `Google Calendar API` `v3` as `Calendar`.
 
 ## Usage
@@ -86,11 +86,14 @@ This allows you also to keep properties from the source event which are not sync
 
 ```js
 function correctionFunction(targetEvent, sourceEvent) {
+  targetEvent.summary = sourceEvent.summary
   targetEvent.description = sourceEvent.description
   targetEvent.location = sourceEvent.location
   return targetEvent
 }
 ```
+
+To avoid any unwanted data exposure, by default, only the start date, end date, recurrence rule and `Busy` as default summary are synchronized.
 
 #### Helper Functions
 
@@ -150,7 +153,7 @@ No yet implemented. There is already a [feature request](https://github.com/scri
 
 ## Update
 
-To update the script version, replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/refs/heads/main/dist/Code.gs).
+To update the script version, replace the `Code.gs` file content with [this code](dist/Code.gs).
 
 ## Deinstallation
 

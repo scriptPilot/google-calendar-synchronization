@@ -46,7 +46,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 4. Build the `dist/Code.gs` file:
 
     ```
-    node buildscript.js
+    npm run build
     ```
 
 5. Update the changelog.
@@ -98,3 +98,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v3.2
 
 - add date and source to build file
+
+### v3.3
+
+- highly improved performance for event series
