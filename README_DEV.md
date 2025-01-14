@@ -98,3 +98,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v3.2
 
 - add date and source to build file
+
+### v3.3
+
+- highly improved performance for event series
