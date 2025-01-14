@@ -6,7 +6,7 @@
 
 function cleanCalendar(calendarName) {
   // Get calendar by name
-  const calendar = getCalendarByName(calendarName);
+  const calendar = getCalendarByName({ calendarName });
   if (!calendar) throw new Error(`Calendar "${calendarName}" not found`);
 
   // Get events
@@ -61,7 +61,7 @@ function getCalendarByName({ calendarName }) {
 // Returns event array by calendar resource
 // https://developers.google.com/calendar/api/v3/reference/events#resource
 
-function getEventsByCalendar({ calendar, timeMin, timeMax }) {
+function getEventsByCalendar({ calendar, timeMin, timeMax, sourceCalendarId }) {
   // Check input
   if (!calendar || typeof calendar.id !== "string")
     throw new Error("calendar.id should be a string");
@@ -70,6 +70,8 @@ function getEventsByCalendar({ calendar, timeMin, timeMax }) {
   const options = {};
   if (timeMin) options.timeMin = timeMin.toISOString();
   if (timeMax) options.timeMax = timeMax.toISOString();
+  if (sourceCalendarId)
+    options.privateExtendedProperty = `sourceCalendarId=${sourceCalendarId}`;
 
   // Retrieve events with pagination
   let events = [];
@@ -211,12 +213,16 @@ function runOneWaySync(
   // Get existing target events
   const existingTargetEvents = getEventsByCalendar({
     calendar: targetCalendar,
+    sourceCalendarId: sourceCalendar.id,
   });
 
   // Calculate target events, apply correction function
   let targetEvents = sourceEvents
     .map((sourceEvent) =>
-      correctionFunction(createTargetEvent(sourceEvent), sourceEvent),
+      correctionFunction(
+        createTargetEvent(sourceEvent, sourceCalendar),
+        sourceEvent,
+      ),
     )
     .filter((e) => e.status !== "cancelled");
 
