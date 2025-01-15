@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-01-14
+// Google Calendar Synchronization, build on 2025-01-15
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function runOneWaySync(
@@ -483,15 +483,15 @@ function createTargetEvent(sourceEvent, sourceCalendar) {
     if (sourceEvent[prop] !== undefined) targetEvent[prop] = sourceEvent[prop];
   });
 
-  // Use default summary
-  const defaultSummary = "Busy";
-  if (!defaultProps.includes("summary")) targetEvent.summary = defaultSummary;
-
-  // Add missing timezone to recurring events
+  // Add missing timezone to event start and end date
   targetEvent.start.timeZone =
     targetEvent.start.timeZone || sourceCalendar.timeZone;
   targetEvent.end.timeZone =
     targetEvent.end.timeZone || sourceCalendar.timeZone;
+
+  // Use default summary
+  const defaultSummary = "Busy";
+  if (!defaultProps.includes("summary")) targetEvent.summary = defaultSummary;
 
   // Add source calendar id
   targetEvent.extendedProperties = {
