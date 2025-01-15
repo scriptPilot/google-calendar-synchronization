@@ -359,7 +359,7 @@ function isSynchronizedEvent(event) {
 }
 
 function isRecurringEvent(event) {
-  return event.recurringEventId !== undefined;
+  return event.recurrence || event.recurringEventId;
 }
 
 function isOOOEvent(event) {
