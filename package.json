@@ -1,7 +1,8 @@
 {
   "version": "3.3.0",
   "scripts": {
-    "build": "npx prettier scripts lib --write && node scripts/build"
+    "start": "clasp push && clasp open",
+    "build": "npx prettier scripts src --write && node scripts/build"
   },
   "dependencies": {
     "glob": "^11.0.1",

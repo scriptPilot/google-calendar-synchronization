@@ -7,5 +7,6 @@
 # NPM
 node_modules/
 
-# onCalendarUpdate.js
-onCalendarUpdate.js
+# onStart
+onStart.js
+onStart.gs

@@ -25,14 +25,24 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 3. Create a new Google Apps Script project:
 
     ```
-    clasp create --type standalone --rootDir lib --title "Google Calendar Synchronization"
+    clasp create --type standalone --rootDir src --title "Google Calendar Synchronization"
     ```
 
 4. Move the hidden `.clasp.json` file to the project root:
 
     ```
-    mv lib/.clasp.json .clasp.json
+    mv src/.clasp.json .clasp.json
     ```
+
+5. Create a file `src/onStart.js`:
+
+    ```js
+    function onStart() {
+      sync('Work', 'Family')
+    }
+    ```
+
+6. Create two Google Calendar `Work` and `Family`.
 
 ## Workflow
 
@@ -102,3 +112,9 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v3.3
 
 - highly improved performance for event series
+
+### v4
+
+- simplified installation and configuration
+- new functions `sync()`, `stop()` and `clean()`
+- time-based synchronization to overcome race conditions

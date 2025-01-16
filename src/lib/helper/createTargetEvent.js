@@ -1,4 +1,4 @@
-function createTargetEvent(sourceEvent, sourceCalendar) {
+function createTargetEvent({ sourceEvent, sourceCalendar }) {
   // Create target event
   const targetEvent = {};
 
@@ -8,20 +8,15 @@ function createTargetEvent(sourceEvent, sourceCalendar) {
     if (sourceEvent[prop] !== undefined) targetEvent[prop] = sourceEvent[prop];
   });
 
-  // Add missing timezone to event start and end date
-  targetEvent.start.timeZone =
-    targetEvent.start.timeZone || sourceCalendar.timeZone;
-  targetEvent.end.timeZone =
-    targetEvent.end.timeZone || sourceCalendar.timeZone;
-
   // Use default summary
   const defaultSummary = "Busy";
   if (!defaultProps.includes("summary")) targetEvent.summary = defaultSummary;
 
-  // Add source calendar id
+  // Add source calendar id and source event id
   targetEvent.extendedProperties = {
     private: {
       sourceCalendarId: sourceCalendar.id,
+      sourceEventId: sourceEvent.id,
     },
   };
 

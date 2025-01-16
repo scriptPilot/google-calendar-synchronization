@@ -1,7 +1,7 @@
-// Returns calendar resource by calendar name
+// Returns calendar resource
 // https://developers.google.com/calendar/api/v3/reference/calendarList#resource
 
-function getCalendarByName({ calendarName }) {
+function getCalendar({ calendarName }) {
   // Check input
   if (typeof calendarName !== "string")
     throw new Error("calendarName should be a string");
