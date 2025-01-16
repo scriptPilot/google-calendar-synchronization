@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-01-15
+// Google Calendar Synchronization, build on 2025-01-16
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function runOneWaySync(
