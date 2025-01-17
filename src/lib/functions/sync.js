@@ -66,14 +66,16 @@ function sync(
   });
 
   // Create target events
-  const targetEvents = sourceEvents.map((sourceEvent) => {
-    let targetEvent = createTargetEvent({ sourceEvent, sourceCalendar });
-    targetEvent = correction(targetEvent, sourceEvent);
-    targetEvent = correctUndefinedProps(targetEvent);
-    return targetEvent;
-  });
+  const targetEvents = sourceEvents
+    .map((sourceEvent) => {
+      let targetEvent = createTargetEvent({ sourceEvent, sourceCalendar });
+      targetEvent = correction(targetEvent, sourceEvent);
+      targetEvent = correctUndefinedProps(targetEvent);
+      return targetEvent;
+    })
+    .filter((e) => e.status !== "cancelled");
 
-  // Calculate obsolete target events
+  // Calculate obsolete existing target events
   const obsoleteExistingTargetEvents = [];
   existingTargetEvents.forEach((existingTargetEvent) => {
     const targetEventFound = targetEvents.filter((e) =>
