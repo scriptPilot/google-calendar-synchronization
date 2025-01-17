@@ -16,7 +16,7 @@ function createTargetEvent({ sourceEvent, sourceCalendar }) {
   targetEvent.extendedProperties = {
     private: {
       sourceCalendarId: sourceCalendar.id,
-      sourceEventId: sourceEvent.id,
+      sourceEventId: sourceEvent.id
     },
   };
 
