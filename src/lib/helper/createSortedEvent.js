@@ -7,7 +7,7 @@ function createSortedEvent(obj) {
       // Harmonize dateTime string
       if (key === 'dateTime') {
         sortedObj[key] = new Date(obj[key]).toISOString()
-      // Sort rrule elements properly
+      // Sort recurrence elements properly
       } else if (key === 'recurrence') {
         sortedObj[key] = obj[key].map(el => {
           let [ elKey, elValue ] = el.split(':')
