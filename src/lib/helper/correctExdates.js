@@ -1,4 +1,11 @@
-function correctExdates(events) {
+// Correction for retrieved Google Calendar events
+// - add cancelled instances as exdate to the main event
+// - remove cancelled instances from the events array
+
+function correctExdates(events, calendarTimeZone) {
+  // Load DateTime
+  const DateTime = loadDateTime();
+
   // Add missing exdates
   events = events.map((event) => {
     // Return any non-event-series unchanged
@@ -17,8 +24,15 @@ function correctExdates(events) {
 
     // Add instances to the exdates array
     instances.forEach((instance) => {
-      const instanceExdate = createRRuleDateStr(instance.originalStartTime);
-      exdates.push(instanceExdate);
+      const instanceExdate = DateTime.fromISO(
+        instance.originalStartTime.dateTime || instance.originalStartTime.date,
+        { zone: instance.originalStartTime.timeZone || calendarTimeZone },
+      );
+      exdates.push(
+        instance.originalStartTime.dateTime
+          ? instanceExdate.toFormat("yMMdd'T'HHmmss")
+          : instanceExdate.toFormat("yMMdd"),
+      );
     });
 
     // Add exdates to the event
@@ -26,7 +40,7 @@ function correctExdates(events) {
       event.recurrence = event.recurrence.filter(
         (r) => r.substr(0, 6) !== "EXDATE",
       );
-      event.recurrence.push("EXDATE:" + exdates.sort().join(","));
+      event.recurrence.push(`EXDATE:${exdates.sort().join(",")}`);
     }
 
     // Return the event

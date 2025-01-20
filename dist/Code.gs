@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-01-17
+// Google Calendar Synchronization, build on 2025-01-20
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -136,24 +136,27 @@ function sync(
     dateMin,
     dateMax,
   });
-  Logger.log(
-    `${sourceEvents.length} source event${sourceEvents.length !== 1 ? "s" : ""} found between ${createLocalDateStr(dateMin)} and ${createLocalDateStr(dateMax)}`,
-  );
-
-  // Reduce source events series to timeframe
+  sourceEvents = correctExdates(sourceEvents, sourceCalendar.timeZone);
   sourceEvents = cutEventsSeries(
     sourceEvents,
     dateMin,
     dateMax,
-    sourceCalendar.id,
+    sourceCalendar.timeZone,
   );
   sourceEvents = cutSingleEvents(sourceEvents, dateMin, dateMax);
+  Logger.log(
+    `${sourceEvents.length} source event${sourceEvents.length !== 1 ? "s" : ""} found between ${createLocalDateStr(dateMin)} and ${createLocalDateStr(dateMax)}`,
+  );
 
   // Get existing target events
-  const existingTargetEvents = getEvents({
+  let existingTargetEvents = getEvents({
     calendarId: targetCalendar.id,
     sourceCalendarId: sourceCalendar.id,
   });
+  existingTargetEvents = correctExdates(
+    existingTargetEvents,
+    targetCalendar.timeZone,
+  );
 
   // Create target events
   const targetEvents = sourceEvents
@@ -217,7 +220,14 @@ function setSyncInterval(minutes = 1) {
   onStart.syncInterval = minutes;
 }
 
-function correctExdates(events) {
+// Correction for retrieved Google Calendar events
+// - add cancelled instances as exdate to the main event
+// - remove cancelled instances from the events array
+
+function correctExdates(events, calendarTimeZone) {
+  // Load DateTime
+  const DateTime = loadDateTime();
+
   // Add missing exdates
   events = events.map((event) => {
     // Return any non-event-series unchanged
@@ -236,8 +246,15 @@ function correctExdates(events) {
 
     // Add instances to the exdates array
     instances.forEach((instance) => {
-      const instanceExdate = createRRuleDateStr(instance.originalStartTime);
-      exdates.push(instanceExdate);
+      const instanceExdate = DateTime.fromISO(
+        instance.originalStartTime.dateTime || instance.originalStartTime.date,
+        { zone: instance.originalStartTime.timeZone || calendarTimeZone },
+      );
+      exdates.push(
+        instance.originalStartTime.dateTime
+          ? instanceExdate.toFormat("yMMdd'T'HHmmss")
+          : instanceExdate.toFormat("yMMdd"),
+      );
     });
 
     // Add exdates to the event
@@ -245,7 +262,7 @@ function correctExdates(events) {
       event.recurrence = event.recurrence.filter(
         (r) => r.substr(0, 6) !== "EXDATE",
       );
-      event.recurrence.push("EXDATE:" + exdates.sort().join(","));
+      event.recurrence.push(`EXDATE:${exdates.sort().join(",")}`);
     }
 
     // Return the event
@@ -352,6 +369,11 @@ function createBareEvent(event) {
   return cleanEvent;
 }
 
+function createDateFromObj(dateObj) {
+  if (!dateObj.dateTime && !dateObj.date)
+    throw new Error("Invalid date object");
+}
+
 function createLocalDateStr(dateTime) {
   // Create the date object
   let date;
@@ -373,7 +395,12 @@ function createLocalDateStr(dateTime) {
 
 function createRRuleDateStr(dateTime) {
   if (dateTime.dateTime) {
-    return dateTime.dateTime.substr(0, 19).replace(/(\.000)|(:)|(-)/g, "");
+    return (
+      new Date(dateTime.dateTime)
+        .toISOString()
+        .substr(0, 19)
+        .replace(/(\.000)|(:)|(-)/g, "") + "Z"
+    );
   } else {
     return dateTime.date.replace(/-/g, "");
   }
@@ -448,162 +475,150 @@ function createTimeframe(pastDays, nextDays) {
   return { dateMin, dateMax };
 }
 
-function cutEventsSeries(events, dateMin, dateMax, calendarId) {
+// Cut event series according to the specified timerange
+
+function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
+  const DateTime = loadDateTime();
+  const { rrulestr } = loadRRule();
   return events
     .map((event) => {
       if (event.recurrence) {
-        // Get first instance in timeframe based on original start date
-        // - request for next 32 days to cover monthly rules
-        // - limit to 32 days for performance reasons
-        // - there is no orderBy in the API to limit to first instance only
-        const instances = Calendar.Events.instances(calendarId, event.id, {
-          timeMin: dateMin.toISOString(),
-          timeMax: new Date(
-            dateMin.getTime() + 32 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        }).items.sort((a, b) => {
-          const aOriginalStart = new Date(
-            a.originalStartTime.dateTime || a.originalStartTime.date,
+        // Create rule object (including DTSTART, RRULE and EXDATE)
+        const eventStartTimeZone = event.start.timeZone || calendarTimeZone;
+        const eventStart = DateTime.fromISO(
+          event.start.dateTime || event.start.date,
+          { zone: eventStartTimeZone },
+        );
+        const eventRule = event.recurrence.filter(
+          (r) => r.substr(0, 6) === "RRULE:",
+        )[0];
+        const rrule = rrulestr(
+          `DTSTART;TZID=${eventStartTimeZone}:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
+        );
+
+        // Get instances
+        const correctedDateMin = DateTime.fromJSDate(dateMin).toJSDate();
+        const correctedDateMax = DateTime.fromJSDate(dateMax)
+          .minus({ seconds: 1 })
+          .toJSDate();
+        const instances = rrule
+          .between(correctedDateMin, correctedDateMax, true)
+          .map((i) =>
+            DateTime.fromJSDate(i)
+              .toUTC()
+              .setZone(eventStartTimeZone, { keepLocalTime: true })
+              .toJSDate(),
           );
-          const bOriginalStart = new Date(
-            b.originalStartTime.dateTime || b.originalStartTime.date,
-          );
-          return aOriginalStart <= bOriginalStart ? -1 : 1;
+
+        // No valid instances
+        const exdates =
+          typeof rrule.exdates === "function"
+            ? rrule.exdates().map((exdate) => exdate.toISOString())
+            : [];
+        const instancesWithoutExdates = instances.filter(
+          (instance) => !exdates.includes(instance.toISOString()),
+        );
+        if (!instancesWithoutExdates.length)
+          return { ...event, status: "cancelled" };
+
+        // Update start date
+        const newEventStart = DateTime.fromJSDate(instances[0]);
+        event.start = {
+          ...event.start,
+          ...(event.start.dateTime
+            ? { dateTime: newEventStart.toISO() }
+            : { date: newEventStart.toISODate() }),
+        };
+
+        // Update end date
+        const eventEndTimeZone = event.end.timeZone || calendarTimeZone;
+        const eventEnd = DateTime.fromISO(
+          event.end.dateTime || event.end.date,
+          { zone: eventEndTimeZone },
+        );
+        const eventDuration = eventEnd - eventStart;
+        const newEventEnd = newEventStart.plus({
+          seconds: eventDuration / 1000,
         });
+        event.end = {
+          ...event.end,
+          ...(event.end.dateTime
+            ? { dateTime: newEventEnd.toISO() }
+            : { date: newEventEnd.toISODate() }),
+        };
 
-        // Instance found within timeframe
-        if (instances.length) {
-          // Calculate new event start and end dates
-          const eventStart = new Date(event.start.dateTime || event.start.date);
-          const eventEnd = new Date(event.end.dateTime || event.end.date);
-          const duration = eventEnd - eventStart;
-          const instanceOriginalEventStart = new Date(
-            instances[0].originalStartTime.dateTime ||
-              instances[0].originalStartTime.date,
-          );
-          const newEventStart = instanceOriginalEventStart;
-          const newEventEnd = new Date(
-            instanceOriginalEventStart.getTime() + duration,
-          );
-
-          // Set new event start end end dates
-          // TODO: manage timezones properly
-          event.start = {
-            ...event.start,
-            ...(event.start.dateTime
-              ? { dateTime: newEventStart.toISOString() }
-              : { date: newEventStart.toLocaleDateString("en-CA") }),
-          };
-          event.end = {
-            ...event.end,
-            ...(event.end.dateTime
-              ? { dateTime: newEventEnd.toISOString() }
-              : { date: newEventEnd.toLocaleDateString("en-CA") }),
-          };
-
-          // Limit instances
-          const ruleWithCount = event.recurrence.filter((r) =>
-            r.includes("COUNT"),
-          )[0];
-          if (ruleWithCount) {
-            let countStartDate = new Date(
-              event.start.dateTime || event.start.date,
+        // Remove COUNT, update UNTIL
+        const lastInstanceEndOfDay = DateTime.fromJSDate(
+          instances.slice(-1)[0],
+        ).endOf("day");
+        const timeframeEndDate = DateTime.fromJSDate(dateMax);
+        const newUntilDate = DateTime.min(
+          lastInstanceEndOfDay,
+          timeframeEndDate,
+        );
+        event.recurrence = event.recurrence.map((arrEl) => {
+          if (arrEl.substr(0, 6) === "RRULE:") {
+            let [rulePrefix, ruleStr] = arrEl.split(":");
+            let ruleStrParts = ruleStr.split(";");
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "COUNT=",
             );
-            let countDate = new Date(countStartDate.getTime());
-            let count = 0;
-            while (countDate < dateMax) {
-              count++;
-              if (ruleWithCount.includes("DAILY"))
-                countDate = new Date(
-                  countDate.getFullYear(),
-                  countDate.getMonth(),
-                  countDate.getDate() + 1,
-                );
-              if (ruleWithCount.includes("WEEKLY"))
-                countDate = new Date(
-                  countDate.getFullYear(),
-                  countDate.getMonth(),
-                  countDate.getDate() + 7,
-                );
-              if (ruleWithCount.includes("MONTHLY"))
-                countDate = new Date(
-                  countDate.getFullYear(),
-                  countDate.getMonth() + 1,
-                  countDate.getDate(),
-                );
-              if (ruleWithCount.includes("YEARLY"))
-                countDate = new Date(
-                  countDate.getFullYear() + 1,
-                  countDate.getMonth(),
-                  countDate.getDate(),
-                );
-            }
-            const newRuleWithCount = ruleWithCount.replace(
-              /COUNT=[0-9]+/,
-              `COUNT=${count}`,
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "UNTIL=",
             );
-            event.recurrence = event.recurrence.map((r) =>
-              r === ruleWithCount ? newRuleWithCount : r,
+            ruleStrParts.push(
+              `UNTIL=${newUntilDate.toUTC().toFormat("yMMdd'T'HHmmss'Z'")}`,
             );
+            ruleStr = ruleStrParts.join(";");
+            return [rulePrefix, ruleStr].join(":");
+          } else {
+            return arrEl;
           }
-          if (!ruleWithCount) {
-            // reduce by 1 ms to get the date string of the last day and not the next day for allday events
-            const until = createRRuleDateStr({
-              date: new Date(
-                dateMax.getTime() - (isAlldayEvent(event) ? 1 : 0),
-              ).toLocaleDateString("en-CA"),
-            });
-            let untilSet = false;
-            event.recurrence = event.recurrence.map((el) => {
-              if (el.substr(0, 6) === "RRULE:") {
-                el = el
-                  .split(";")
-                  .map((subEl) => {
-                    if (subEl.substr(0, 6) === "UNTIL=" && !untilSet) {
-                      untilSet = true;
-                      if (new Date(subEl.substr(6) > dateMax))
-                        return "UNTIL=" + until;
-                      else return subEl;
-                    }
-                    return subEl;
-                  })
-                  .join(";");
-                if (!untilSet) {
-                  untilSet = true;
-                  el = el + ";UNTIL=" + until;
-                }
-                return el;
-              }
-              return el;
-            });
-            event = createSortedEvent(event);
-          }
-        } else {
-          // Exclude all event series without instance within timeframe
-          event.status = "cancelled";
-        }
+        });
       }
       return event;
     })
     .filter((e) => e.status !== "cancelled");
 }
 
+// Cut single events according to the specified timeframe
+
 function cutSingleEvents(events, dateMin, dateMax) {
-  return events.map((event) => {
-    if (!event.recurrence) {
-      const startDate = new Date(event.start.dateTime || event.start.date);
-      const endDate = new Date(event.end.dateTime || event.end.date);
-      if (startDate < dateMin) {
-        if (event.start.dateTime) event.start.dateTime = dateMin.toISOString();
-        else event.start.date = dateMin.toLocaleDateString("en-CA");
+  const DateTime = loadDateTime();
+  const dateTimeMin = DateTime.fromJSDate(dateMin);
+  const dateTimeMax = DateTime.fromJSDate(dateMax);
+  return events
+    .map((event) => {
+      if (!event.recurrence) {
+        let dateTimeStart = DateTime.fromISO(
+          event.start.dateTime || event.start.date,
+        );
+        let dateTimeEnd = DateTime.fromISO(
+          event.end.dateTime || event.end.date,
+        );
+        if (dateTimeStart < dateTimeMin) dateTimeStart = dateTimeMin;
+        if (dateTimeEnd > dateTimeMax) dateTimeEnd = dateTimeMax;
+        if (dateTimeEnd <= dateTimeStart)
+          return { ...event, status: "cancelled" };
+        return {
+          ...event,
+          start: {
+            ...event.start,
+            ...(event.start.dateTime
+              ? { dateTime: dateTimeStart.toISO() }
+              : { date: dateTimeStart.toISODate() }),
+          },
+          end: {
+            ...event.end,
+            ...(event.end.dateTime
+              ? { dateTime: dateTimeEnd.toISO() }
+              : { date: dateTimeEnd.toISODate() }),
+          },
+        };
       }
-      if (endDate > dateMax) {
-        if (event.end.dateTime) event.end.dateTime = dateMax.toISOString();
-        else event.end.date = dateMax.toLocaleDateString("en-CA");
-      }
-    }
-    return event;
-  });
+      return event;
+    })
+    .filter((e) => e.status !== "cancelled");
 }
 
 function deleteEvents(calendarId, events) {
@@ -669,9 +684,6 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
     pageToken = nextPageToken;
   }
 
-  // Correct exdates
-  events = correctExdates(events);
-
   // Return the events array
   return events;
 }
@@ -680,4 +692,24 @@ function isEventEqual(firstEvent, secondEvent) {
   firstEvent = JSON.stringify(createSortedEvent(createBareEvent(firstEvent)));
   secondEvent = JSON.stringify(createSortedEvent(createBareEvent(secondEvent)));
   return firstEvent === secondEvent;
+}
+
+// https://moment.github.io/luxon/
+
+function loadDateTime() {
+  const url = "https://moment.github.io/luxon/global/luxon.min.js";
+  const response = UrlFetchApp.fetch(url);
+  const script = response.getContentText();
+  eval(script);
+  return luxon.DateTime;
+}
+
+// https://github.com/jkbrzt/rrule
+
+function loadRRule() {
+  const url = "https://unpkg.com/rrule@2.8.1/dist/es5/rrule.min.js";
+  const response = UrlFetchApp.fetch(url);
+  const script = response.getContentText();
+  eval(script);
+  return rrule;
 }

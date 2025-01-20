@@ -46,24 +46,27 @@ function sync(
     dateMin,
     dateMax,
   });
-  Logger.log(
-    `${sourceEvents.length} source event${sourceEvents.length !== 1 ? "s" : ""} found between ${createLocalDateStr(dateMin)} and ${createLocalDateStr(dateMax)}`,
-  );
-
-  // Reduce source events series to timeframe
+  sourceEvents = correctExdates(sourceEvents, sourceCalendar.timeZone);
   sourceEvents = cutEventsSeries(
     sourceEvents,
     dateMin,
     dateMax,
-    sourceCalendar.id,
+    sourceCalendar.timeZone,
   );
   sourceEvents = cutSingleEvents(sourceEvents, dateMin, dateMax);
+  Logger.log(
+    `${sourceEvents.length} source event${sourceEvents.length !== 1 ? "s" : ""} found between ${createLocalDateStr(dateMin)} and ${createLocalDateStr(dateMax)}`,
+  );
 
   // Get existing target events
-  const existingTargetEvents = getEvents({
+  let existingTargetEvents = getEvents({
     calendarId: targetCalendar.id,
     sourceCalendarId: sourceCalendar.id,
   });
+  existingTargetEvents = correctExdates(
+    existingTargetEvents,
+    targetCalendar.timeZone,
+  );
 
   // Create target events
   const targetEvents = sourceEvents

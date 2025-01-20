@@ -38,7 +38,10 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
     ```js
     function onStart() {
-      sync('Work', 'Family')
+        sync('Family', 'Work', 0, 2, (targetEvent, sourceEvent) => {
+            targetEvent.summary = sourceEvent.summary
+            return targetEvent
+        })
     }
     ```
 
@@ -118,3 +121,8 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 - simplified installation and configuration
 - new functions `sync()`, `stop()` and `clean()`
 - time-based synchronization to overcome race conditions
+
+### v4.1
+
+- calculate recurring instances instead of requesting them from the Google Calendar API
+- fix issue with re-creation of recurring events on every sync run

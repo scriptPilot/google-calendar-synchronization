@@ -1,17 +1,39 @@
+// Cut single events according to the specified timeframe
+
 function cutSingleEvents(events, dateMin, dateMax) {
-  return events.map((event) => {
-    if (!event.recurrence) {
-      const startDate = new Date(event.start.dateTime || event.start.date);
-      const endDate = new Date(event.end.dateTime || event.end.date);
-      if (startDate < dateMin) {
-        if (event.start.dateTime) event.start.dateTime = dateMin.toISOString();
-        else event.start.date = dateMin.toLocaleDateString("en-CA");
+  const DateTime = loadDateTime();
+  const dateTimeMin = DateTime.fromJSDate(dateMin);
+  const dateTimeMax = DateTime.fromJSDate(dateMax);
+  return events
+    .map((event) => {
+      if (!event.recurrence) {
+        let dateTimeStart = DateTime.fromISO(
+          event.start.dateTime || event.start.date,
+        );
+        let dateTimeEnd = DateTime.fromISO(
+          event.end.dateTime || event.end.date,
+        );
+        if (dateTimeStart < dateTimeMin) dateTimeStart = dateTimeMin;
+        if (dateTimeEnd > dateTimeMax) dateTimeEnd = dateTimeMax;
+        if (dateTimeEnd <= dateTimeStart)
+          return { ...event, status: "cancelled" };
+        return {
+          ...event,
+          start: {
+            ...event.start,
+            ...(event.start.dateTime
+              ? { dateTime: dateTimeStart.toISO() }
+              : { date: dateTimeStart.toISODate() }),
+          },
+          end: {
+            ...event.end,
+            ...(event.end.dateTime
+              ? { dateTime: dateTimeEnd.toISO() }
+              : { date: dateTimeEnd.toISODate() }),
+          },
+        };
       }
-      if (endDate > dateMax) {
-        if (event.end.dateTime) event.end.dateTime = dateMax.toISOString();
-        else event.end.date = dateMax.toLocaleDateString("en-CA");
-      }
-    }
-    return event;
-  });
+      return event;
+    })
+    .filter((e) => e.status !== "cancelled");
 }

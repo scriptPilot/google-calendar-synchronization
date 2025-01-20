@@ -27,9 +27,6 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
     pageToken = nextPageToken;
   }
 
-  // Correct exdates
-  events = correctExdates(events);
-
   // Return the events array
   return events;
 }
