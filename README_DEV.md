@@ -126,3 +126,4 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
 - calculate recurring instances instead of requesting them from the Google Calendar API
 - fix issue with re-creation of recurring events on every sync run
+- fix issue where synchronization continues after stop() was called
