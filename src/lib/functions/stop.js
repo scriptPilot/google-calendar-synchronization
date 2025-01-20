@@ -4,6 +4,9 @@ function stop() {
     ScriptApp.deleteTrigger(trigger),
   );
 
+  // Set a stop note (to stop any running script to create a new trigger)
+  PropertiesService.getUserProperties().setProperty("stopNote", true);
+
   // Log script stop
   Logger.log(`The synchronization will not run again`);
   Logger.log(`If the script is currently running, it will complete`);

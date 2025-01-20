@@ -9,10 +9,13 @@ function start() {
     );
   }
 
-  // Remove all existing triggers
+  // Remove all existing triggers to avoid parallel run
   ScriptApp.getProjectTriggers().forEach((trigger) =>
     ScriptApp.deleteTrigger(trigger),
   );
+
+  // Remove any stop note from previous stop() call
+  PropertiesService.getUserProperties().deleteProperty("stopNote");
 
   // Set the script invocation check to true
   onStart.calledByStartFunction = true;
@@ -22,6 +25,12 @@ function start() {
 
   // Set the script invocation check to false
   onStart.calledByStartFunction = false;
+
+  // Check stop note (if stop() was called during the script run)
+  if (PropertiesService.getUserProperties().getProperty("stopNote") !== null) {
+    Logger.log(`Synchronization stopped.`);
+    return;
+  }
 
   // Create a new time-based trigger for the start() function
   const minutes =
@@ -40,6 +49,9 @@ function stop() {
   ScriptApp.getProjectTriggers().forEach((trigger) =>
     ScriptApp.deleteTrigger(trigger),
   );
+
+  // Set a stop note (to stop any running script to create a new trigger)
+  PropertiesService.getUserProperties().setProperty("stopNote", true);
 
   // Log script stop
   Logger.log(`The synchronization will not run again`);
@@ -76,14 +88,14 @@ function clean() {
       totalExistingTargetEvents + existingTargetEvents.length;
   });
 
-  // Reset all user properties
-  PropertiesService.getUserProperties().deleteAllProperties();
+  // Reset sync pairs property
+  // - not all properties are deleted to keep script stop notice
+  PropertiesService.getUserProperties().deleteProperty("syncPairs");
 
   // Log completion
   Logger.log(
     `${totalExistingTargetEvents} obsolete target event${totalExistingTargetEvents !== 1 ? "s" : ""} deleted`,
   );
-  Logger.log("User properties reset done");
   Logger.log("Cleanup completed");
   Logger.log("You can now remove the Google Apps Script project");
 }

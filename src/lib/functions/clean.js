@@ -27,14 +27,14 @@ function clean() {
       totalExistingTargetEvents + existingTargetEvents.length;
   });
 
-  // Reset all user properties
-  PropertiesService.getUserProperties().deleteAllProperties();
+  // Reset sync pairs property
+  // - not all properties are deleted to keep script stop notice
+  PropertiesService.getUserProperties().deleteProperty("syncPairs");
 
   // Log completion
   Logger.log(
     `${totalExistingTargetEvents} obsolete target event${totalExistingTargetEvents !== 1 ? "s" : ""} deleted`,
   );
-  Logger.log("User properties reset done");
   Logger.log("Cleanup completed");
   Logger.log("You can now remove the Google Apps Script project");
 }

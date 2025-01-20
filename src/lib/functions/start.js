@@ -6,10 +6,13 @@ function start() {
     );
   }
 
-  // Remove all existing triggers
+  // Remove all existing triggers to avoid parallel run
   ScriptApp.getProjectTriggers().forEach((trigger) =>
     ScriptApp.deleteTrigger(trigger),
   );
+
+  // Remove any stop note from previous stop() call
+  PropertiesService.getUserProperties().deleteProperty("stopNote");
 
   // Set the script invocation check to true
   onStart.calledByStartFunction = true;
@@ -19,6 +22,12 @@ function start() {
 
   // Set the script invocation check to false
   onStart.calledByStartFunction = false;
+
+  // Check stop note (if stop() was called during the script run)
+  if (PropertiesService.getUserProperties().getProperty("stopNote") !== null) {
+    Logger.log(`Synchronization stopped.`);
+    return;
+  }
 
   // Create a new time-based trigger for the start() function
   const minutes =
