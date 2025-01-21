@@ -130,6 +130,6 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
 ### v4.2
 
+- added helper functions for pastDays / nextDays
 - external libraries included in the source code
-- pastDays / nextDays helper
-- ensure next trigger on sync errors
+- fix issue where a sync error prevent the creation of the next trigger
