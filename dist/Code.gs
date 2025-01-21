@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-01-20
+// Google Calendar Synchronization, build on 2025-01-21
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -17,14 +17,20 @@ function start() {
   // Remove any stop note from previous stop() call
   PropertiesService.getUserProperties().deleteProperty("stopNote");
 
-  // Set the script invocation check to true
-  onStart.calledByStartFunction = true;
+  // Wrap the sync to catch any error and ensure the next trigger creation
+  try {
+    // Set the script invocation check to true
+    onStart.calledByStartFunction = true;
 
-  // Run the onStart function
-  onStart();
+    // Run the onStart function
+    onStart();
 
-  // Set the script invocation check to false
-  onStart.calledByStartFunction = false;
+    // Set the script invocation check to false
+    onStart.calledByStartFunction = false;
+  } catch (err) {
+    Logger.log("An error occured during the synchronization");
+    Logger.log(`Message: ${err.message}`);
+  }
 
   // Check stop note (if stop() was called during the script run)
   if (PropertiesService.getUserProperties().getProperty("stopNote") !== null) {
