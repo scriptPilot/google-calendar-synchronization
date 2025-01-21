@@ -132,3 +132,4 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
 - external libraries included in the source code
 - pastDays / nextDays helper
+- ensure next trigger on sync errors
