@@ -3,9 +3,6 @@
 // - remove cancelled instances from the events array
 
 function correctExdates(events, calendarTimeZone) {
-  // Load DateTime
-  const DateTime = loadDateTime();
-
   // Add missing exdates
   events = events.map((event) => {
     // Return any non-event-series unchanged

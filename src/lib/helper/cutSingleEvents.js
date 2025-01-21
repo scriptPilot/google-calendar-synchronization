@@ -1,7 +1,6 @@
 // Cut single events according to the specified timeframe
 
 function cutSingleEvents(events, dateMin, dateMax) {
-  const DateTime = loadDateTime();
   const dateTimeMin = DateTime.fromJSDate(dateMin);
   const dateTimeMax = DateTime.fromJSDate(dateMax);
   return events

@@ -65,6 +65,34 @@ By default, the past `7` and next `28` days are synchronized.
 sync('Work', 'Family', 7, 28)
 ```
 
+There are a couple of helper function available to support the correction function.
+
+For past days:
+
+```js
+startOfWeek(offset = 0)       
+startOfMonth(offset = 0)
+startOfQuarter(offset = 0)
+startOfHalfyear(offset = 0)
+startOfYear(offset = 0)
+```
+
+For next days:
+
+```js
+endOfWeek(offset = 0)         
+endOfMonth(offset = 0)
+endOfQuarter(offset = 0)
+endOfHalfyear(offset = 0)
+endOfYear(offset = 0)
+```
+
+Example - timerange is from the beginning of this week until the end of next month:
+
+```js
+sync('Work', 'Family', startOfWeek(), endOfMonth(1))
+```
+
 ### Correction Function
 
 To avoid any unwanted data exposure, by default, only the start date, end date, recurrence rule and `Busy` as default summary are synchronized.

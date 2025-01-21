@@ -1,8 +1,6 @@
 // Cut event series according to the specified timerange
 
 function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
-  const DateTime = loadDateTime();
-  const { rrulestr } = loadRRule();
   return events
     .map((event) => {
       if (event.recurrence) {
@@ -12,10 +10,7 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
           event.start.dateTime || event.start.date,
           { zone: eventStartTimeZone },
         );
-        const eventRule = event.recurrence.filter(
-          (r) => r.substr(0, 6) === "RRULE:",
-        )[0];
-        const rrule = rrulestr(
+        const rrule = RRuleStr(
           `DTSTART;TZID=${eventStartTimeZone}:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
         );
 
