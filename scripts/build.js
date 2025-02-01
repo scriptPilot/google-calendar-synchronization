@@ -21,6 +21,7 @@ glob("src/lib/**")
         "clean.js",
         "sync.js",
         "setSyncInterval",
+        "setMaxExecutionTime",
       ];
 
       // Check if either file matches a priority

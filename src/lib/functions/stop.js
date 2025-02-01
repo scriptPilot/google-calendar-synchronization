@@ -1,8 +1,6 @@
 function stop() {
   // Remove all existing triggers
-  ScriptApp.getProjectTriggers().forEach((trigger) =>
-    ScriptApp.deleteTrigger(trigger),
-  );
+  deleteTrigger("start");
 
   // Set a stop note (to stop any running script to create a new trigger)
   PropertiesService.getUserProperties().setProperty("stopNote", true);

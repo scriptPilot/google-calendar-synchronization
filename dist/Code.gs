@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-01-22
+// Google Calendar Synchronization, build on 2025-02-01
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -9,24 +9,23 @@ function start() {
     );
   }
 
-  // Remove all existing triggers to avoid parallel run
-  ScriptApp.getProjectTriggers().forEach((trigger) =>
-    ScriptApp.deleteTrigger(trigger),
-  );
+  // Set the script invocation check to true
+  onStart.calledByStartFunction = true;
+
+  // Set default values
+  setSyncInterval();
+  setMaxExecutionTime();
+
+  // Create a trigger based on the max execution time (fallback if script is exeeding Google Script limits)
+  createTrigger("start", onStart.maxExecutionTime);
 
   // Remove any stop note from previous stop() call
   PropertiesService.getUserProperties().deleteProperty("stopNote");
 
   // Wrap the sync to catch any error and ensure the next trigger creation
   try {
-    // Set the script invocation check to true
-    onStart.calledByStartFunction = true;
-
     // Run the onStart function
     onStart();
-
-    // Set the script invocation check to false
-    onStart.calledByStartFunction = false;
   } catch (err) {
     Logger.log("An error occured during the synchronization");
     Logger.log(`Message: ${err.message}`);
@@ -38,32 +37,13 @@ function start() {
     return;
   }
 
-  // Create a new time-based trigger for the start() function
-  let triggerCreated = false;
-  const minutes =
-    typeof onStart.syncInterval === "number" ? onStart.syncInterval : 1;
-  while (!triggerCreated) {
-    try {
-      ScriptApp.newTrigger("start")
-        .timeBased()
-        .after(minutes * 60 * 1000)
-        .create();
-      triggerCreated = true;
-    } catch (err) {
-      Logger.log("Error on trigger creation - will try again in 1s");
-      Utilities.sleep(1000);
-    }
-  }
-  Logger.log(
-    `Synchronization will run again in approximately ${minutes} minute${minutes === 1 ? "" : "s"}`,
-  );
+  // Create a trigger based on the sync interval
+  createTrigger("start", onStart.syncInterval);
 }
 
 function stop() {
   // Remove all existing triggers
-  ScriptApp.getProjectTriggers().forEach((trigger) =>
-    ScriptApp.deleteTrigger(trigger),
-  );
+  deleteTrigger("start");
 
   // Set a stop note (to stop any running script to create a new trigger)
   PropertiesService.getUserProperties().setProperty("stopNote", true);
@@ -379,6 +359,17 @@ function isDeclinedByMe(event) {
   );
 }
 
+function setMaxExecutionTime(minutes = 6) {
+  // Check script invocation
+  if (!onStart.calledByStartFunction) {
+    throw new Error(
+      "Please select the Code.gs file and run the start() script.",
+    );
+  }
+  // Set the new max execution time
+  onStart.maxExecutionTime = minutes;
+}
+
 function setSyncInterval(minutes = 1) {
   // Check script invocation
   if (!onStart.calledByStartFunction) {
@@ -565,6 +556,17 @@ function createTimeframe(pastDays, nextDays) {
   return { dateMin, dateMax };
 }
 
+function createTrigger(functionName, minutes) {
+  deleteTrigger(functionName);
+  ScriptApp.newTrigger(functionName)
+    .timeBased()
+    .after(minutes * 60 * 1000)
+    .create();
+  Logger.log(
+    `Trigger created for the ${functionName}() function in ${minutes} minute${minutes !== 1 ? "s" : ""}`,
+  );
+}
+
 // Cut event series according to the specified timerange
 
 function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
@@ -712,6 +714,16 @@ function deleteEvents(calendarId, events) {
       `Deleted event "${event.summary || "(no title)"}" at ${createLocalDateStr(event.start)}`,
     );
   });
+}
+
+function deleteTrigger(functionName) {
+  let triggers = ScriptApp.getProjectTriggers();
+  for (let trigger of triggers) {
+    if (trigger.getHandlerFunction() === functionName) {
+      ScriptApp.deleteTrigger(trigger);
+      Logger.log(`Existing trigger deleted for the ${functionName}() function`);
+    }
+  }
 }
 
 // Returns calendar resource

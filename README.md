@@ -185,8 +185,23 @@ This value can be increased, if the Google Calender API quota is an issue.
 
 ```js
 function onStart() {
-  sync('Work', 'Family')
   setSyncInterval(1)
+  sync('Work', 'Family')
+} 
+```
+
+### Maximum Execution Time
+
+A fallback trigger is starting the synchronization again, if the synchronziation script is not completed within the maximum execution time, given by Google Scripts.
+
+By default, the maximum execution time is `6` minutes.
+
+This value can be increased to make use of the increased Google Workspace limit of `30` minutes.
+
+```js
+function onStart() {
+  setMaxExecutionTime(30)
+  sync('Work', 'Family')
 } 
 ```
 
