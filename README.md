@@ -194,7 +194,7 @@ function onStart() {
 
 A fallback trigger is starting the synchronization again, if the synchronziation script is not completed within the maximum execution time, given by Google Scripts.
 
-By default, the maximum execution time is `6` minutes.
+By default, the maximum execution time is `6` minutes what should be sufficient for most synchronization tasks.
 
 This value can be increased to make use of the increased Google Workspace limit of `30` minutes.
 
