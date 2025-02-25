@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-02-01
+// Google Calendar Synchronization, build on 2025-02-25
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -18,6 +18,9 @@ function start() {
 
   // Create a trigger based on the max execution time (fallback if script is exeeding Google Script limits)
   createTrigger("start", onStart.maxExecutionTime);
+
+  // Create an hourly trigger (fallback as workaround for timeout on script invocation)
+  createTrigger("startFallback", "hourly");
 
   // Remove any stop note from previous stop() call
   PropertiesService.getUserProperties().deleteProperty("stopNote");
@@ -44,6 +47,7 @@ function start() {
 function stop() {
   // Remove all existing triggers
   deleteTrigger("start");
+  deleteTrigger("startFallback");
 
   // Set a stop note (to stop any running script to create a new trigger)
   PropertiesService.getUserProperties().setProperty("stopNote", true);
@@ -558,13 +562,20 @@ function createTimeframe(pastDays, nextDays) {
 
 function createTrigger(functionName, minutes) {
   deleteTrigger(functionName);
-  ScriptApp.newTrigger(functionName)
-    .timeBased()
-    .after(minutes * 60 * 1000)
-    .create();
-  Logger.log(
-    `Trigger created for the ${functionName}() function in ${minutes} minute${minutes !== 1 ? "s" : ""}`,
-  );
+  if (typeof minutes === "number") {
+    ScriptApp.newTrigger(functionName)
+      .timeBased()
+      .after(minutes * 60 * 1000)
+      .create();
+    Logger.log(
+      `Trigger created for the ${functionName}() function in ${minutes} minute${minutes !== 1 ? "s" : ""}`,
+    );
+  } else if (minutes === "hourly") {
+    ScriptApp.newTrigger(functionName).timeBased().everyHours(1).create();
+    Logger.log(`Trigger created for the ${functionName}() function every hour`);
+  } else {
+    throw new Error("Minutes argument not valid");
+  }
 }
 
 // Cut event series according to the specified timerange
@@ -788,6 +799,14 @@ function isEventEqual(firstEvent, secondEvent) {
   firstEvent = JSON.stringify(createSortedEvent(createBareEvent(firstEvent)));
   secondEvent = JSON.stringify(createSortedEvent(createBareEvent(secondEvent)));
   return firstEvent === secondEvent;
+}
+
+// Dedicated function to be called by a fallback trigger
+// Workaround for timeout on script invocation
+
+function startFallback() {
+  // Run the start function
+  start();
 }
 
 // https://moment.github.io/luxon/

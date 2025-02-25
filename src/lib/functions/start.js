@@ -16,6 +16,9 @@ function start() {
   // Create a trigger based on the max execution time (fallback if script is exeeding Google Script limits)
   createTrigger("start", onStart.maxExecutionTime);
 
+  // Create an hourly trigger (fallback as workaround for timeout on script invocation)
+  createTrigger("startFallback", "hourly");
+
   // Remove any stop note from previous stop() call
   PropertiesService.getUserProperties().deleteProperty("stopNote");
 
