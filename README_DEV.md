@@ -134,6 +134,6 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 - external libraries included in the source code
 - fix issue where a sync error prevent the creation of the next trigger
 
-### v4.3
+### v4.4
 
 - fix issue where script fails with timeout and no trigger is set

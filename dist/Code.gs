@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-02-25
+// Google Calendar Synchronization, build on 2025-02-26
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -16,11 +16,8 @@ function start() {
   setSyncInterval();
   setMaxExecutionTime();
 
-  // Create a trigger based on the max execution time (fallback if script is exeeding Google Script limits)
-  createTrigger("start", onStart.maxExecutionTime);
-
-  // Create an hourly trigger (fallback as workaround for timeout on script invocation)
-  createTrigger("startFallback", "hourly");
+  // Create or update the fallback trigger based on the max execution time (fallback if script is exeeding Google Script limits)
+  createTrigger("startFallback", onStart.maxExecutionTime);
 
   // Remove any stop note from previous stop() call
   PropertiesService.getUserProperties().deleteProperty("stopNote");
@@ -42,6 +39,10 @@ function start() {
 
   // Create a trigger based on the sync interval
   createTrigger("start", onStart.syncInterval);
+
+  // Update the fallback trigger
+  // sync interval + 1 minute to allow fallback trigger update on the next regular script run
+  createTrigger("startFallback", onStart.syncInterval + 1);
 }
 
 function stop() {
@@ -562,20 +563,35 @@ function createTimeframe(pastDays, nextDays) {
 
 function createTrigger(functionName, minutes) {
   deleteTrigger(functionName);
-  if (typeof minutes === "number") {
+  if (functionName === "startFallback") {
+    // Ceil to next valid interval (1, 5, 10, 15 or 30)
+    minutes =
+      minutes >= 30
+        ? minutes
+        : minutes > 15
+          ? 30
+          : minutes > 10
+            ? 15
+            : minutes > 5
+              ? 10
+              : 5;
+    if (minutes <= 30) {
+      ScriptApp.newTrigger(functionName)
+        .timeBased()
+        .everyMinutes(minutes)
+        .create();
+    } else {
+      ScriptApp.newTrigger(functionName).timeBased().everyHours(1).create();
+    }
+  } else {
     ScriptApp.newTrigger(functionName)
       .timeBased()
       .after(minutes * 60 * 1000)
       .create();
-    Logger.log(
-      `Trigger created for the ${functionName}() function in ${minutes} minute${minutes !== 1 ? "s" : ""}`,
-    );
-  } else if (minutes === "hourly") {
-    ScriptApp.newTrigger(functionName).timeBased().everyHours(1).create();
-    Logger.log(`Trigger created for the ${functionName}() function every hour`);
-  } else {
-    throw new Error("Minutes argument not valid");
   }
+  Logger.log(
+    `Trigger created for the ${functionName}() function ${functionName === "startFallback" ? "every" : "in"} ${minutes} minute${minutes !== 1 ? "s" : ""}`,
+  );
 }
 
 // Cut event series according to the specified timerange
@@ -802,7 +818,7 @@ function isEventEqual(firstEvent, secondEvent) {
 }
 
 // Dedicated function to be called by a fallback trigger
-// Workaround for timeout on script invocation
+// Workaround for script timeout
 
 function startFallback() {
   // Run the start function
