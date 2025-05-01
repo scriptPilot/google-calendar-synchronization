@@ -11,7 +11,7 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
           { zone: eventStartTimeZone },
         );
         const rrule = RRuleStr(
-          `DTSTART;TZID=${eventStartTimeZone}:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
+          `DTSTART:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
         );
 
         // Get instances

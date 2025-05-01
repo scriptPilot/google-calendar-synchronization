@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-02-26
+// Google Calendar Synchronization, build on 2025-05-01
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -607,7 +607,7 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
           { zone: eventStartTimeZone },
         );
         const rrule = RRuleStr(
-          `DTSTART;TZID=${eventStartTimeZone}:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
+          `DTSTART:${eventStart.toFormat("yMMdd'T'HHmmss")}\n${event.recurrence.join("\n")}`,
         );
 
         // Get instances
