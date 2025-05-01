@@ -138,3 +138,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.4
 
 - fix issue where script fails with timeout and no trigger is set
+
+### v4.5
+
+- fix issue where script created offset for event series in different timezone
