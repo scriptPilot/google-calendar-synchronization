@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2025-05-01
+// Google Calendar Synchronization, build on 2025-07-28
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -562,7 +562,6 @@ function createTimeframe(pastDays, nextDays) {
 }
 
 function createTrigger(functionName, minutes) {
-  deleteTrigger(functionName);
   if (functionName === "startFallback") {
     // Ceil to next valid interval (1, 5, 10, 15 or 30)
     minutes =
@@ -575,15 +574,22 @@ function createTrigger(functionName, minutes) {
             : minutes > 5
               ? 10
               : 5;
+
+    let newTrigger = null;
     if (minutes <= 30) {
-      ScriptApp.newTrigger(functionName)
+      newTrigger = ScriptApp.newTrigger(functionName)
         .timeBased()
         .everyMinutes(minutes)
         .create();
     } else {
-      ScriptApp.newTrigger(functionName).timeBased().everyHours(1).create();
+      newTrigger = ScriptApp.newTrigger(functionName)
+        .timeBased()
+        .everyHours(1)
+        .create();
     }
+    deleteTrigger(functionName, (exclude = newTrigger.getUniqueId()));
   } else {
+    deleteTrigger(functionName);
     ScriptApp.newTrigger(functionName)
       .timeBased()
       .after(minutes * 60 * 1000)
@@ -743,10 +749,13 @@ function deleteEvents(calendarId, events) {
   });
 }
 
-function deleteTrigger(functionName) {
+function deleteTrigger(functionName, exclude = null) {
   let triggers = ScriptApp.getProjectTriggers();
   for (let trigger of triggers) {
-    if (trigger.getHandlerFunction() === functionName) {
+    if (
+      trigger.getHandlerFunction() === functionName &&
+      trigger.getUniqueId() !== exclude
+    ) {
       ScriptApp.deleteTrigger(trigger);
       Logger.log(`Existing trigger deleted for the ${functionName}() function`);
     }
