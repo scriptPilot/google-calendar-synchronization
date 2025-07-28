@@ -24,7 +24,7 @@ function createTrigger(functionName, minutes) {
         .everyHours(1)
         .create();
     }
-    deleteTrigger(functionName, (exclude = newTrigger.getUniqueId()));
+    deleteTrigger(functionName, newTrigger.getUniqueId());
   } else {
     deleteTrigger(functionName);
     ScriptApp.newTrigger(functionName)
