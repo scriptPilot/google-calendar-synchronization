@@ -142,3 +142,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.5
 
 - fix issue where script created offset for event series in different timezone
+
+### v4.6
+
+- fix issue where all triggers are deleted
