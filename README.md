@@ -2,7 +2,7 @@
 
 Synchronize Google Calendar events between two or more calendars.
 
-Made with Google Apps Script, related to [Google Calendar Corrections](https://github.com/scriptPilot/google-calendar-correction).
+Made with Google Apps Script, related to [Google Calendar Correction](https://github.com/scriptPilot/google-calendar-correction).
 
 ## Installation
 
