@@ -144,4 +144,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.7
 
 - add lock (`LockService`) to `start()` to prevent parallel execution from fallback trigger
-- fix event comparison: strip Google Calendar default fields to prevent unnecessary delete/recreate cycles
+
+### v4.8
+
+- fix event comparison: use whitelist approach to ignore volatile/new API fields and prevent unnecessary delete/recreate cycles

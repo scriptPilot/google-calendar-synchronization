@@ -1,32 +1,31 @@
 function createBareEvent(event) {
-  const {
-    anyoneCanAddSelf,
-    conferenceData,
-    created,
-    creator,
-    etag,
-    eventType,
-    guestsCanInviteOthers,
-    guestsCanModify,
-    guestsCanSeeOtherGuests,
-    hangoutLink,
-    htmlLink,
-    iCalUID,
-    id,
-    kind,
-    locked,
-    organizer,
-    originalStartTime,
-    privateCopy,
-    recurringEventId,
-    reminders,
-    sequence,
-    source,
-    status,
-    transparency,
-    updated,
-    visibility,
-    ...cleanEvent
-  } = event;
-  return cleanEvent;
+  const keep = [
+    "anyoneCanAddSelf",
+    "attachments",
+    "attendees",
+    "colorId",
+    "description",
+    "end",
+    "extendedProperties",
+    "gadget",
+    "guestsCanInviteOthers",
+    "guestsCanModify",
+    "guestsCanSeeOtherGuests",
+    "location",
+    "locked",
+    "originalStartTime",
+    "privateCopy",
+    "recurrence",
+    "reminders",
+    "source",
+    "start",
+    "summary",
+    "transparency",
+    "visibility",
+  ];
+  const bareEvent = {};
+  keep.forEach((k) => {
+    if (event[k] !== undefined) bareEvent[k] = event[k];
+  });
+  return bareEvent;
 }
