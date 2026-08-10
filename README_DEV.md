@@ -147,4 +147,4 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
 ### v4.8
 
-- fix event comparison: use whitelist approach to ignore volatile/new API fields and prevent unnecessary delete/recreate cycles
+- fix event comparison: use whitelist to compare only user-modifiable properties, ignoring all API metadata and defaults to prevent unnecessary delete/recreate cycles
