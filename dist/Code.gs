@@ -1,7 +1,13 @@
-// Google Calendar Synchronization, build on 2025-08-23
+// Google Calendar Synchronization, build on 2026-08-10
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1)) {
+    Logger.log("start() is already running - skipping this invocation");
+    return;
+  }
+
   // Check onStart function
   if (typeof onStart !== "function") {
     throw new Error(
@@ -452,22 +458,32 @@ function correctUndefinedProps(event) {
 
 function createBareEvent(event) {
   const {
+    anyoneCanAddSelf,
     conferenceData,
     created,
     creator,
     etag,
     eventType,
+    guestsCanInviteOthers,
+    guestsCanModify,
+    guestsCanSeeOtherGuests,
     hangoutLink,
     htmlLink,
     iCalUID,
     id,
     kind,
+    locked,
     organizer,
+    originalStartTime,
+    privateCopy,
     recurringEventId,
     reminders,
     sequence,
+    source,
     status,
+    transparency,
     updated,
+    visibility,
     ...cleanEvent
   } = event;
   return cleanEvent;

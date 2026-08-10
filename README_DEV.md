@@ -140,3 +140,8 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.6
 
 - fix issue where all triggers are deleted
+
+### v4.7
+
+- add lock (`LockService`) to `start()` to prevent parallel execution from fallback trigger
+- fix event comparison: strip Google Calendar default fields to prevent unnecessary delete/recreate cycles

@@ -1,4 +1,10 @@
 function start() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1)) {
+    Logger.log("start() is already running - skipping this invocation");
+    return;
+  }
+
   // Check onStart function
   if (typeof onStart !== "function") {
     throw new Error(
