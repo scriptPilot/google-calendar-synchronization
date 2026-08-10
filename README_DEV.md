@@ -28,13 +28,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
     clasp create --type standalone --rootDir src --title "Google Calendar Synchronization"
     ```
 
-4. Move the hidden `.clasp.json` file to the project root:
-
-    ```
-    mv src/.clasp.json .clasp.json
-    ```
-
-5. Create a file `src/onStart.js`:
+4. Create a file `src/onStart.js`:
 
     ```js
     function onStart() {
@@ -45,7 +39,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
     }
     ```
 
-6. Create two Google Calendar `Work` and `Family`.
+5. Create two Google Calendar `Work` and `Family`.
 
 ## Workflow
 
