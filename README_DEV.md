@@ -148,3 +148,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.8
 
 - fix event comparison: use whitelist to compare only user-modifiable properties, ignoring all API metadata and defaults to prevent unnecessary delete/recreate cycles
+
+### v4.9
+
+- permanently delete events from target calendar (not just move to trash) to prevent performance degradation when trash accumulates many deleted events
