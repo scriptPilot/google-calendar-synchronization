@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2026-08-21
+// Google Calendar Synchronization, build on 2026-08-10
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -176,34 +176,10 @@ function sync(
     targetCalendar.timeZone,
   );
 
-  // Map existing target events by their source event id for exdate accumulation
-  const existingTargetBySourceId = {};
-  existingTargetEvents.forEach((existingTargetEvent) => {
-    const sourceEventId =
-      existingTargetEvent.extendedProperties &&
-      existingTargetEvent.extendedProperties.private &&
-      existingTargetEvent.extendedProperties.private.sourceEventId;
-    if (sourceEventId && !existingTargetBySourceId[sourceEventId])
-      existingTargetBySourceId[sourceEventId] = existingTargetEvent;
-  });
-
   // Create target events
   const targetEvents = sourceEvents
     .map((sourceEvent) => {
       let targetEvent = createTargetEvent({ sourceEvent, sourceCalendar });
-      // Accumulate exdates from the existing target event so that
-      // cancellations outside the sync range are preserved across runs
-      if (targetEvent.recurrence && existingTargetBySourceId[sourceEvent.id]) {
-        const existing = existingTargetBySourceId[sourceEvent.id];
-        const mergedExdates = [
-          ...getExdates(targetEvent.recurrence),
-          ...getExdates(existing.recurrence),
-        ];
-        targetEvent.recurrence = setExdates(
-          targetEvent.recurrence,
-          mergedExdates,
-        );
-      }
       targetEvent = correction(targetEvent, sourceEvent);
       targetEvent = correctUndefinedProps(targetEvent);
       return targetEvent;
@@ -235,31 +211,6 @@ function sync(
 
   // Create missing target events
   missingTargetEvents.forEach((targetEvent) => {
-    // Backfill all cancelled instances of the recurring series via the
-    // instances API so that cancellations outside the sync range are added
-    // as exdates as well (runs only on (re)creation, not in steady state)
-    if (targetEvent.recurrence) {
-      const sourceEventId =
-        targetEvent.extendedProperties &&
-        targetEvent.extendedProperties.private &&
-        targetEvent.extendedProperties.private.sourceEventId;
-      const cancelledExdates = backfillExdates({
-        calendarId: sourceCalendar.id,
-        eventId: sourceEventId,
-        calendarTimeZone: sourceCalendar.timeZone,
-        dateMax,
-      });
-      if (cancelledExdates.length) {
-        const mergedExdates = [
-          ...getExdates(targetEvent.recurrence),
-          ...cancelledExdates,
-        ];
-        targetEvent.recurrence = setExdates(
-          targetEvent.recurrence,
-          mergedExdates,
-        );
-      }
-    }
     Calendar.Events.insert(targetEvent, targetCalendar.id);
     Logger.log(
       `Created event "${targetEvent.summary || "(no title)"}" at ${createLocalDateStr(targetEvent.start)}`,
@@ -439,45 +390,6 @@ function setSyncInterval(minutes = 1) {
   }
   // Set the new sync interval
   onStart.syncInterval = minutes;
-}
-
-// Fetch all cancelled instances of a recurring series via the Google Calendar
-// instances API and return them as exdate strings (same format as correctExdates).
-// This captures cancellations outside the sync range as well and is intended
-// to run only when a target event is (re)created, not on every sync run.
-
-function backfillExdates({ calendarId, eventId, calendarTimeZone, dateMax }) {
-  const exdates = [];
-  let pageToken = null;
-  const baseOptions = {
-    showDeleted: true,
-    maxResults: 2500,
-    ...(dateMax ? { timeMax: dateMax.toISOString() } : {}),
-  };
-  do {
-    const options = pageToken
-      ? { ...baseOptions, pageToken }
-      : { ...baseOptions };
-    const response = Calendar.Events.instances(calendarId, eventId, options);
-    const items = response.items || [];
-    items.forEach((instance) => {
-      if (instance.status !== "cancelled") return;
-      if (!instance.originalStartTime) return;
-      const instanceExdate = DateTime.fromISO(
-        instance.originalStartTime.dateTime || instance.originalStartTime.date,
-        {
-          zone: instance.originalStartTime.timeZone || calendarTimeZone,
-        },
-      );
-      exdates.push(
-        instance.originalStartTime.dateTime
-          ? instanceExdate.toFormat("yMMdd'T'HHmmss")
-          : instanceExdate.toFormat("yMMdd"),
-      );
-    });
-    pageToken = response.nextPageToken;
-  } while (pageToken);
-  return exdates;
 }
 
 // Correction for retrieved Google Calendar events
@@ -722,7 +634,7 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
               .toJSDate(),
           );
 
-        // No valid instances within the sync range -> out of scope
+        // No valid instances
         const exdates =
           typeof rrule.exdates === "function"
             ? rrule.exdates().map((exdate) => exdate.toISOString())
@@ -733,12 +645,60 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
         if (!instancesWithoutExdates.length)
           return { ...event, status: "cancelled" };
 
-        // Keep the original recurrence rule (DTSTART, COUNT, UNTIL) unchanged.
-        // The series is synchronized as a whole so that occurrences outside the
-        // sync range are created in the target calendar as well and the series
-        // does not need to be recreated on every sync run. The sync range only
-        // decides whether the series is in scope, which is handled by the source
-        // event request (timeMin/timeMax) and the in-scope check above.
+        // Update start date
+        const newEventStart = DateTime.fromJSDate(instances[0]);
+        event.start = {
+          ...event.start,
+          ...(event.start.dateTime
+            ? { dateTime: newEventStart.toISO() }
+            : { date: newEventStart.toISODate() }),
+        };
+
+        // Update end date
+        const eventEndTimeZone = event.end.timeZone || calendarTimeZone;
+        const eventEnd = DateTime.fromISO(
+          event.end.dateTime || event.end.date,
+          { zone: eventEndTimeZone },
+        );
+        const eventDuration = eventEnd - eventStart;
+        const newEventEnd = newEventStart.plus({
+          seconds: eventDuration / 1000,
+        });
+        event.end = {
+          ...event.end,
+          ...(event.end.dateTime
+            ? { dateTime: newEventEnd.toISO() }
+            : { date: newEventEnd.toISODate() }),
+        };
+
+        // Remove COUNT, update UNTIL
+        const lastInstanceEndOfDay = DateTime.fromJSDate(
+          instances.slice(-1)[0],
+        ).endOf("day");
+        const timeframeEndDate = DateTime.fromJSDate(dateMax);
+        const newUntilDate = DateTime.min(
+          lastInstanceEndOfDay,
+          timeframeEndDate,
+        );
+        event.recurrence = event.recurrence.map((arrEl) => {
+          if (arrEl.substr(0, 6) === "RRULE:") {
+            let [rulePrefix, ruleStr] = arrEl.split(":");
+            let ruleStrParts = ruleStr.split(";");
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "COUNT=",
+            );
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "UNTIL=",
+            );
+            ruleStrParts.push(
+              `UNTIL=${newUntilDate.toUTC().toFormat("yMMdd'T'HHmmss'Z'")}`,
+            );
+            ruleStr = ruleStrParts.join(";");
+            return [rulePrefix, ruleStr].join(":");
+          } else {
+            return arrEl;
+          }
+        });
       }
       return event;
     })
@@ -867,29 +827,10 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
   return events;
 }
 
-// Extract exdate values from a recurrence array
-
-function getExdates(recurrence) {
-  if (!Array.isArray(recurrence)) return [];
-  const exdateLine = recurrence.filter((r) => r.substr(0, 6) === "EXDATE")[0];
-  if (!exdateLine) return [];
-  return exdateLine.split(":")[1].split(",");
-}
-
 function isEventEqual(firstEvent, secondEvent) {
   firstEvent = JSON.stringify(createSortedEvent(createBareEvent(firstEvent)));
   secondEvent = JSON.stringify(createSortedEvent(createBareEvent(secondEvent)));
   return firstEvent === secondEvent;
-}
-
-// Write exdate values back into a recurrence array (single sorted line)
-
-function setExdates(recurrence, exdates) {
-  if (!Array.isArray(recurrence)) return recurrence;
-  recurrence = recurrence.filter((r) => r.substr(0, 6) !== "EXDATE");
-  const uniqueSorted = [...new Set(exdates)].filter(Boolean).sort();
-  if (uniqueSorted.length) recurrence.push(`EXDATE:${uniqueSorted.join(",")}`);
-  return recurrence;
 }
 
 // Dedicated function to be called by a fallback trigger

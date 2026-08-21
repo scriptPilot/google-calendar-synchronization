@@ -28,7 +28,7 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
               .toJSDate(),
           );
 
-        // No valid instances within the sync range -> out of scope
+        // No valid instances
         const exdates =
           typeof rrule.exdates === "function"
             ? rrule.exdates().map((exdate) => exdate.toISOString())
@@ -39,12 +39,60 @@ function cutEventsSeries(events, dateMin, dateMax, calendarTimeZone) {
         if (!instancesWithoutExdates.length)
           return { ...event, status: "cancelled" };
 
-        // Keep the original recurrence rule (DTSTART, COUNT, UNTIL) unchanged.
-        // The series is synchronized as a whole so that occurrences outside the
-        // sync range are created in the target calendar as well and the series
-        // does not need to be recreated on every sync run. The sync range only
-        // decides whether the series is in scope, which is handled by the source
-        // event request (timeMin/timeMax) and the in-scope check above.
+        // Update start date
+        const newEventStart = DateTime.fromJSDate(instances[0]);
+        event.start = {
+          ...event.start,
+          ...(event.start.dateTime
+            ? { dateTime: newEventStart.toISO() }
+            : { date: newEventStart.toISODate() }),
+        };
+
+        // Update end date
+        const eventEndTimeZone = event.end.timeZone || calendarTimeZone;
+        const eventEnd = DateTime.fromISO(
+          event.end.dateTime || event.end.date,
+          { zone: eventEndTimeZone },
+        );
+        const eventDuration = eventEnd - eventStart;
+        const newEventEnd = newEventStart.plus({
+          seconds: eventDuration / 1000,
+        });
+        event.end = {
+          ...event.end,
+          ...(event.end.dateTime
+            ? { dateTime: newEventEnd.toISO() }
+            : { date: newEventEnd.toISODate() }),
+        };
+
+        // Remove COUNT, update UNTIL
+        const lastInstanceEndOfDay = DateTime.fromJSDate(
+          instances.slice(-1)[0],
+        ).endOf("day");
+        const timeframeEndDate = DateTime.fromJSDate(dateMax);
+        const newUntilDate = DateTime.min(
+          lastInstanceEndOfDay,
+          timeframeEndDate,
+        );
+        event.recurrence = event.recurrence.map((arrEl) => {
+          if (arrEl.substr(0, 6) === "RRULE:") {
+            let [rulePrefix, ruleStr] = arrEl.split(":");
+            let ruleStrParts = ruleStr.split(";");
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "COUNT=",
+            );
+            ruleStrParts = ruleStrParts.filter(
+              (rsp) => rsp.substr(0, 6) !== "UNTIL=",
+            );
+            ruleStrParts.push(
+              `UNTIL=${newUntilDate.toUTC().toFormat("yMMdd'T'HHmmss'Z'")}`,
+            );
+            ruleStr = ruleStrParts.join(";");
+            return [rulePrefix, ruleStr].join(":");
+          } else {
+            return arrEl;
+          }
+        });
       }
       return event;
     })

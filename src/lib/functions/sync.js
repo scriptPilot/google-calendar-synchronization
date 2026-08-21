@@ -68,34 +68,10 @@ function sync(
     targetCalendar.timeZone,
   );
 
-  // Map existing target events by their source event id for exdate accumulation
-  const existingTargetBySourceId = {};
-  existingTargetEvents.forEach((existingTargetEvent) => {
-    const sourceEventId =
-      existingTargetEvent.extendedProperties &&
-      existingTargetEvent.extendedProperties.private &&
-      existingTargetEvent.extendedProperties.private.sourceEventId;
-    if (sourceEventId && !existingTargetBySourceId[sourceEventId])
-      existingTargetBySourceId[sourceEventId] = existingTargetEvent;
-  });
-
   // Create target events
   const targetEvents = sourceEvents
     .map((sourceEvent) => {
       let targetEvent = createTargetEvent({ sourceEvent, sourceCalendar });
-      // Accumulate exdates from the existing target event so that
-      // cancellations outside the sync range are preserved across runs
-      if (targetEvent.recurrence && existingTargetBySourceId[sourceEvent.id]) {
-        const existing = existingTargetBySourceId[sourceEvent.id];
-        const mergedExdates = [
-          ...getExdates(targetEvent.recurrence),
-          ...getExdates(existing.recurrence),
-        ];
-        targetEvent.recurrence = setExdates(
-          targetEvent.recurrence,
-          mergedExdates,
-        );
-      }
       targetEvent = correction(targetEvent, sourceEvent);
       targetEvent = correctUndefinedProps(targetEvent);
       return targetEvent;
@@ -127,31 +103,6 @@ function sync(
 
   // Create missing target events
   missingTargetEvents.forEach((targetEvent) => {
-    // Backfill all cancelled instances of the recurring series via the
-    // instances API so that cancellations outside the sync range are added
-    // as exdates as well (runs only on (re)creation, not in steady state)
-    if (targetEvent.recurrence) {
-      const sourceEventId =
-        targetEvent.extendedProperties &&
-        targetEvent.extendedProperties.private &&
-        targetEvent.extendedProperties.private.sourceEventId;
-      const cancelledExdates = backfillExdates({
-        calendarId: sourceCalendar.id,
-        eventId: sourceEventId,
-        calendarTimeZone: sourceCalendar.timeZone,
-        dateMax,
-      });
-      if (cancelledExdates.length) {
-        const mergedExdates = [
-          ...getExdates(targetEvent.recurrence),
-          ...cancelledExdates,
-        ];
-        targetEvent.recurrence = setExdates(
-          targetEvent.recurrence,
-          mergedExdates,
-        );
-      }
-    }
     Calendar.Events.insert(targetEvent, targetCalendar.id);
     Logger.log(
       `Created event "${targetEvent.summary || "(no title)"}" at ${createLocalDateStr(targetEvent.start)}`,
