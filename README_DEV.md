@@ -152,8 +152,3 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.9
 
 - permanently delete events from target calendar (not just move to trash) to prevent performance degradation when trash accumulates many deleted events
-
-### v4.10
-
-- fix recurring events with first instance in the past: sync the original recurrence rule as a whole instead of truncating to the sync range, so occurrences outside the range are created and the series is not recreated every run
-- fix cancelled instances outside the sync range showing as ghosts: accumulate exdates from existing target events and backfill all cancelled instances via the instances API on (re)creation
