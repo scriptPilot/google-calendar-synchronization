@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2026-08-10
+// Google Calendar Synchronization, build on 2026-08-28
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
