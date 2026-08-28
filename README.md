@@ -9,7 +9,7 @@ Made with Google Apps Script, related to [Google Calendar Correction](https://gi
 1. [Backup all Google Calendars](https://calendar.google.com/calendar/u/0/r/settings/export) to be able to restore them if something went wrong.
 2. Open [Google Apps Script](https://script.google.com/) and create a new project `Calendar Synchronization`.
 3. Click at the `+` next to `Services`, add `Google Calendar API` `v3` as `Calendar`.
-4. Replace the `Code.gs` file content with [this code](dist/Code.gs) and save.
+4. Replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/main/dist/Code.gs) and save.
 
 ## Usage
 
@@ -220,7 +220,7 @@ function onStart() {
 
 ## Update
 
-To update the script version, replace the `Code.gs` file content with [this code](dist/Code.gs).
+To update the script version, replace the `Code.gs` file content with [this code](https://raw.githubusercontent.com/scriptPilot/google-calendar-synchronization/main/dist/Code.gs).
 
 ## Deinstallation
 
