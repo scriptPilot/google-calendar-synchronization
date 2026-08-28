@@ -103,10 +103,14 @@ function sync(
 
   // Create missing target events
   missingTargetEvents.forEach((targetEvent) => {
-    Calendar.Events.insert(targetEvent, targetCalendar.id);
+    retryOnRateLimit(() =>
+      Calendar.Events.insert(targetEvent, targetCalendar.id),
+    );
     Logger.log(
       `Created event "${targetEvent.summary || "(no title)"}" at ${createLocalDateStr(targetEvent.start)}`,
     );
+    // Pause between the requests to avoid exceeding the Google Calendar API quota
+    Utilities.sleep(250);
   });
 
   // Log completion

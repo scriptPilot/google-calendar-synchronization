@@ -156,3 +156,6 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.12
 
 - new `setSingleEvents()` option to expand recurring events into single instances via the Google Calendar API instead of calculating them locally (default `false`)
+
+### v4.13
+- handle rate limit errors with exponential backoff retry and pauses between event deletions / creations

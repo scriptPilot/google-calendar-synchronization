@@ -22,9 +22,11 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
   let events = [];
   let pageToken = null;
   while (pageToken !== undefined) {
-    const { nextPageToken, items } = Calendar.Events.list(
-      calendarId,
-      pageToken ? { ...options, pageToken } : { ...options },
+    const { nextPageToken, items } = retryOnRateLimit(() =>
+      Calendar.Events.list(
+        calendarId,
+        pageToken ? { ...options, pageToken } : { ...options },
+      ),
     );
     events = [...events, ...items];
     pageToken = nextPageToken;

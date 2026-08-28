@@ -212,10 +212,14 @@ function sync(
 
   // Create missing target events
   missingTargetEvents.forEach((targetEvent) => {
-    Calendar.Events.insert(targetEvent, targetCalendar.id);
+    retryOnRateLimit(() =>
+      Calendar.Events.insert(targetEvent, targetCalendar.id),
+    );
     Logger.log(
       `Created event "${targetEvent.summary || "(no title)"}" at ${createLocalDateStr(targetEvent.start)}`,
     );
+    // Pause between the requests to avoid exceeding the Google Calendar API quota
+    Utilities.sleep(250);
   });
 
   // Log completion
@@ -758,13 +762,12 @@ function cutSingleEvents(events, dateMin, dateMax) {
 
 function deleteEvents(calendarId, events) {
   events.forEach((event) => {
-    Calendar.Events.remove(calendarId, event.id);
-    try {
-      Calendar.Events.remove(calendarId, event.id);
-    } catch (e) {}
+    retryOnRateLimit(() => Calendar.Events.remove(calendarId, event.id));
     Logger.log(
       `Deleted event "${event.summary || "(no title)"}" at ${createLocalDateStr(event.start)}`,
     );
+    // Pause between the requests to avoid exceeding the Google Calendar API quota
+    Utilities.sleep(250);
   });
 }
 
@@ -790,7 +793,9 @@ function getCalendar({ calendarName }) {
     throw new Error("calendarName should be a string");
 
   // Retrieve and filter calendar list
-  const calendarList = Calendar.CalendarList.list({ showHidden: true }).items;
+  const calendarList = retryOnRateLimit(() =>
+    Calendar.CalendarList.list({ showHidden: true }),
+  ).items;
   const filteredList = calendarList.filter((c) => c.summary === calendarName);
 
   // Throw error if no calendar is found
@@ -830,9 +835,11 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
   let events = [];
   let pageToken = null;
   while (pageToken !== undefined) {
-    const { nextPageToken, items } = Calendar.Events.list(
-      calendarId,
-      pageToken ? { ...options, pageToken } : { ...options },
+    const { nextPageToken, items } = retryOnRateLimit(() =>
+      Calendar.Events.list(
+        calendarId,
+        pageToken ? { ...options, pageToken } : { ...options },
+      ),
     );
     events = [...events, ...items];
     pageToken = nextPageToken;
@@ -846,6 +853,25 @@ function isEventEqual(firstEvent, secondEvent) {
   firstEvent = JSON.stringify(createSortedEvent(createBareEvent(firstEvent)));
   secondEvent = JSON.stringify(createSortedEvent(createBareEvent(secondEvent)));
   return firstEvent === secondEvent;
+}
+
+// Retry an API call with exponential backoff in case of rate limit errors
+// https://developers.google.com/calendar/api/guides/handle-errors
+
+function retryOnRateLimit(action) {
+  const maxAttempts = 5;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return action();
+    } catch (err) {
+      const isRateLimitError =
+        /rate limit|rateLimitExceeded|quota|backend error/i.test(
+          err.message || "",
+        );
+      if (!isRateLimitError || attempt >= maxAttempts) throw err;
+      Utilities.sleep(2 ** (attempt - 1) * 1000);
+    }
+  }
 }
 
 // Dedicated function to be called by a fallback trigger
