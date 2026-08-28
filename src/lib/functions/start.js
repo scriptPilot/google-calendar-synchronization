@@ -18,6 +18,7 @@ function start() {
   // Set default values
   setSyncInterval();
   setMaxExecutionTime();
+  setSingleEvents();
 
   // Create or update the fallback trigger based on the max execution time (fallback if script is exeeding Google Script limits)
   createTrigger("startFallback", onStart.maxExecutionTime);

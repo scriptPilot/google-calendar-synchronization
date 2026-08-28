@@ -21,6 +21,7 @@ function start() {
   // Set default values
   setSyncInterval();
   setMaxExecutionTime();
+  setSingleEvents();
 
   // Create or update the fallback trigger based on the max execution time (fallback if script is exeeding Google Script limits)
   createTrigger("startFallback", onStart.maxExecutionTime);
@@ -379,6 +380,17 @@ function setMaxExecutionTime(minutes = 6) {
   }
   // Set the new max execution time
   onStart.maxExecutionTime = minutes;
+}
+
+function setSingleEvents(singleEvents = false) {
+  // Check script invocation
+  if (!onStart.calledByStartFunction) {
+    throw new Error(
+      "Please select the Code.gs file and run the start() script.",
+    );
+  }
+  // Set the new single events option
+  onStart.singleEvents = singleEvents;
 }
 
 function setSyncInterval(minutes = 1) {
@@ -806,6 +818,9 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
     maxResults: 2500,
     ...(dateMin ? { timeMin: dateMin.toISOString() } : {}),
     ...(dateMax ? { timeMax: dateMax.toISOString() } : {}),
+    ...(onStart.singleEvents && dateMin && dateMax
+      ? { singleEvents: true }
+      : {}),
     ...(sourceCalendarId
       ? { privateExtendedProperty: `sourceCalendarId=${sourceCalendarId}` }
       : {}),

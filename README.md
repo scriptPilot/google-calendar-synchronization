@@ -190,6 +190,19 @@ function onStart() {
 } 
 ```
 
+### Single Events
+
+By default, event series are synchronized as series - one target event is created, including the recurrence rule.
+
+Alternatively, series can be expanded into single events, so one target event is created per occurrence.
+
+```js
+function onStart() {
+  setSingleEvents(true)
+  sync('Work', 'Family')
+} 
+```
+
 ### Maximum Execution Time
 
 A fallback trigger is starting the synchronization again, if the synchronziation script is not completed within the maximum execution time, given by Google Scripts.

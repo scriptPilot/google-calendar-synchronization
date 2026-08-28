@@ -22,6 +22,7 @@ glob("src/lib/**")
         "sync.js",
         "setSyncInterval",
         "setMaxExecutionTime",
+        "setSingleEvents",
       ];
 
       // Check if either file matches a priority

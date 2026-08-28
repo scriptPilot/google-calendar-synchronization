@@ -152,3 +152,7 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 ### v4.9
 
 - permanently delete events from target calendar (not just move to trash) to prevent performance degradation when trash accumulates many deleted events
+
+### v4.12
+
+- new `setSingleEvents()` option to expand recurring events into single instances via the Google Calendar API instead of calculating them locally (default `false`)

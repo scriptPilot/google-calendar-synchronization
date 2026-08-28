@@ -10,6 +10,9 @@ function getEvents({ calendarId, dateMin, dateMax, sourceCalendarId }) {
     maxResults: 2500,
     ...(dateMin ? { timeMin: dateMin.toISOString() } : {}),
     ...(dateMax ? { timeMax: dateMax.toISOString() } : {}),
+    ...(onStart.singleEvents && dateMin && dateMax
+      ? { singleEvents: true }
+      : {}),
     ...(sourceCalendarId
       ? { privateExtendedProperty: `sourceCalendarId=${sourceCalendarId}` }
       : {}),
