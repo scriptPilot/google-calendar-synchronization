@@ -87,10 +87,10 @@ endOfHalfyear(offset = 0)
 endOfYear(offset = 0)
 ```
 
-Example - timerange is from the beginning of this week until the end of next month:
+Example - timerange is from the beginning of last week until the end of next month:
 
 ```js
-sync('Work', 'Family', startOfWeek(), endOfMonth(1))
+sync('Work', 'Family', startOfWeek(1), endOfMonth(1))
 ```
 
 ### Correction Function
