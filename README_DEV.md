@@ -159,3 +159,6 @@ Feel free to open an [issue](https://github.com/scriptPilot/google-calendar-sync
 
 ### v4.13
 - handle rate limit errors with exponential backoff retry and pauses between event deletions / creations
+
+### v4.14
+- fix `startOfYear()` helper to calculate past days like all other `start*` helpers (invalid time range before)

@@ -1,4 +1,4 @@
-// Google Calendar Synchronization, build on 2026-08-28
+// Google Calendar Synchronization, build on 2026-08-30
 // Source: https://github.com/scriptPilot/google-calendar-synchronization
 
 function start() {
@@ -307,7 +307,7 @@ function endOfHalfyear(offset = 0) {
 }
 
 function startOfYear(offset = 0) {
-  return nextDays(DateTime.now().startOf("year").plus({ years: offset }));
+  return pastDays(DateTime.now().startOf("year").minus({ years: offset }));
 }
 
 function endOfYear(offset = 0) {

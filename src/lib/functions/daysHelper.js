@@ -73,7 +73,7 @@ function endOfHalfyear(offset = 0) {
 }
 
 function startOfYear(offset = 0) {
-  return nextDays(DateTime.now().startOf("year").plus({ years: offset }));
+  return pastDays(DateTime.now().startOf("year").minus({ years: offset }));
 }
 
 function endOfYear(offset = 0) {
